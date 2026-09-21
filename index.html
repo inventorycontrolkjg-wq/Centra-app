@@ -9659,7 +9659,8 @@ window.terbitkanPO = async function(){
             metode_payment: metodePayment,
             tenor: metodePayment === "KREDIT" ? tenor : "",
             status: "diterbitkan",
-            dibuat_oleh: auth.currentUser.email,
+            dibuat_oleh_uid: auth.currentUser.uid,
+            dibuat_oleh_email: auth.currentUser.email,
             created_at: serverTimestamp()
         });
 

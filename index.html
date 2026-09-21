@@ -4249,8 +4249,28 @@ async function setDoc(docRef, data, options){
         }
     }
 
-    const { error } = await sb.from(docRef.table).upsert(payload, { onConflict: idCol });
-    if(error) throw error;
+    // PENTING: SENGAJA TIDAK pakai upsert() di sini. Postgres mengeksekusi
+    // upsert() sebagai "INSERT ... ON CONFLICT DO UPDATE", dan RLS Postgres
+    // tetap mengecek policy INSERT (WITH CHECK) untuk baris itu -- WALAUPUN
+    // baris nya sebenarnya sudah ada dan ujung-ujungnya cuma di-UPDATE.
+    // Akibatnya kalau role yang manggil cuma diizinkan UPDATE tapi TIDAK
+    // diizinkan INSERT di tabel itu (misal purchasing/pimpinan/audit yang
+    // setDoc(..., {merge:true}) ke "permintaan_barang" -- yang insert-nya
+    // memang cuma boleh gudang), Supabase selalu menolak dengan error "new
+    // row violates row-level security policy", walaupun perubahan yang mereka
+    // lakukan sebenarnya sah menurut policy UPDATE. Makanya di sini dicek dulu
+    // baris nya sudah ada atau belum, baru dipilih secara eksplisit update()
+    // atau insert() -- masing-masing baru kena policy yang sesuai.
+    const { data: existingRow, error: errCek } = await sb.from(docRef.table).select(idCol).eq(idCol, docRef.id).maybeSingle();
+    if(errCek) throw errCek;
+
+    if(existingRow){
+        const { error } = await sb.from(docRef.table).update(payload).eq(idCol, docRef.id);
+        if(error) throw error;
+    } else {
+        const { error } = await sb.from(docRef.table).insert(payload);
+        if(error) throw error;
+    }
 }
 
 async function updateDoc(docRef, data){

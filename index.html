@@ -927,12 +927,26 @@ table.po-cetak-ttd .po-ttd-space td{ height:100px; border-top:none; }
     text-align:center;
     font-size:10.5px;
 }
+.popb-sign-grid-2{ grid-template-columns:repeat(2, 1fr); max-width:460px; margin-left:auto; margin-right:auto; }
+.popb-sign-grid-3{ grid-template-columns:repeat(3, 1fr); }
 .popb-sign-cell .icon{ color:#444; margin-bottom:6px; }
 .popb-sign-cell .label{ font-weight:700; color:#111; margin-bottom:46px; }
 .popb-sign-cell .sign-line{ border-top:1px solid #333; }
 .popb-sign-cell .name{ margin-top:6px; color:#666; }
+.popb-sign-cell .name img{ display:block; margin:0 auto; max-width:150px; height:50px; object-fit:contain; }
 
 .popb-footer{ margin-top:22px; font-size:9px; color:#999; text-align:right; }
+
+.popb-note{ font-size:10.5px; color:#777; margin:2px 0 16px; line-height:1.6; }
+
+.popb-summary{ margin-left:auto; width:270px; border:1px solid #ddd; border-radius:10px; padding:12px 18px; margin-bottom:22px; }
+.popb-summary-row{ display:flex; justify-content:space-between; align-items:center; font-size:11.5px; padding:4px 0; }
+.popb-summary-row .label{ color:#888; }
+.popb-summary-row .value{ font-weight:600; }
+.popb-summary-row.total{ border-top:1px solid #ddd; margin-top:6px; padding-top:9px; font-size:14px; font-weight:800; }
+
+.popb-gallery-wrap{ border:1px solid #e2e2e2; background:#fafafa; border-radius:10px; padding:12px 14px; margin:16px 0 6px; }
+.popb-gallery-title{ font-size:9.5px; font-weight:700; text-transform:uppercase; letter-spacing:.4px; color:#888; margin-bottom:10px; }
 
 .dash-wallpaper{
     min-height:70vh;
@@ -7845,6 +7859,16 @@ const POPB_ICON_CHECK = `<svg viewBox="0 0 24 24" width="16" height="16" fill="n
 const POPB_ICON_GEAR = `<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19 12a7 7 0 00-.14-1.4l2-1.5-2-3.4-2.3.9a7 7 0 00-2.4-1.4L14 2.8h-4l-.3 2.4a7 7 0 00-2.4 1.4l-2.3-.9-2 3.4 2 1.5a7 7 0 000 2.8l-2 1.5 2 3.4 2.3-.9a7 7 0 002.4 1.4l.3 2.4h4l.3-2.4a7 7 0 002.4-1.4l2.3.9 2-3.4-2-1.5c.1-.46.14-.93.14-1.4z"/></svg>`;
 const POPB_ICON_HOME = `<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 11.5L12 4l8 7.5"/><path d="M6 10v9a1 1 0 001 1h10a1 1 0 001-1v-9"/><path d="M10 20v-5h4v5"/></svg>`;
 const POPB_ICON_PACKAGE = `<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M21 8l-9-5-9 5 9 5 9-5z"/><path d="M3 8v8l9 5 9-5V8"/><line x1="12" y1="13" x2="12" y2="21"/></svg>`;
+// -------- Ikon tambahan buat desain cetak dokumen lain (TTB, SJ, BKB, KBB, PO, BMB) --------
+const POPB_ICON_TRUCK = `<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="13" height="9"/><path d="M15 10h4l3 3v3h-7z"/><circle cx="7" cy="18" r="1.6"/><circle cx="17.5" cy="18" r="1.6"/></svg>`;
+const POPB_ICON_INBOX = `<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12h4l2 3h4l2-3h4"/><path d="M5 5h14l1.5 7v7a1 1 0 01-1 1H4.5a1 1 0 01-1-1v-7L5 5z"/></svg>`;
+const POPB_ICON_REFRESH = `<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12a8 8 0 0114-5.3L21 9"/><path d="M21 4v5h-5"/><path d="M20 12a8 8 0 01-14 5.3L3 15"/><path d="M3 20v-5h5"/></svg>`;
+const POPB_ICON_RECEIPT = `<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3h9l3 3v15H6z"/><path d="M15 3v3h3"/><line x1="9" y1="12" x2="15" y2="12"/><line x1="9" y1="16" x2="15" y2="16"/></svg>`;
+const POPB_ICON_DOCUMENT = `<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2h8l4 4v16H6z"/><path d="M14 2v4h4"/><line x1="9" y1="13" x2="15" y2="13"/><line x1="9" y1="17" x2="15" y2="17"/></svg>`;
+const POPB_ICON_CLOCK = `<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.5 2"/></svg>`;
+const POPB_ICON_PHONE = `<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3h3l2 5-2.5 1.5a12 12 0 006 6L16 13l5 2v3a2 2 0 01-2 2C10.5 20 4 13.5 4 5a2 2 0 012-2z"/></svg>`;
+const POPB_ICON_PRINTER = `<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="8" width="16" height="9" rx="1"/><path d="M7 8V4h10v4"/><rect x="8" y="13" width="8" height="5"/></svg>`;
+const POPB_ICON_BUILDING = `<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="3" width="16" height="18" rx="1"/><line x1="8" y1="8" x2="16" y2="8"/><line x1="8" y1="12" x2="16" y2="12"/><line x1="8" y1="16" x2="12" y2="16"/></svg>`;
 
 window.cetakPermintaan = function(id){
 
@@ -8776,54 +8800,79 @@ function cetakSuratJalan(d, sj){
 </tr>`).join("");
 
     const html = `
-<div class="print-doc">
+<div class="popb-doc">
 
-    <div class="print-head">
-        <div>
-            <h1>OptiMill Karya Jaya</h1>
-            <p>Surat Jalan (Pengiriman Barang)</p>
+    <div class="popb-head">
+        <div class="popb-head-left">
+            <div class="popb-icon-badge">${POPB_ICON_TRUCK}</div>
+            <div class="popb-titles">
+                <h1>Surat Jalan</h1>
+                <p>Pengiriman Barang</p>
+            </div>
         </div>
-        <div class="print-nopr">
+        <div class="popb-nopr">
             <div class="label">No. Surat Jalan</div>
             <div class="value">${sj.no_sj}</div>
         </div>
     </div>
 
-    <div class="print-info-grid">
-        <div><span class="lbl">Tanggal Kirim</span><span class="val">${sj.tanggal_display || sj.tanggal}</span></div>
-        <div><span class="lbl">No. PR Terkait</span><span class="val">${sj.no_pr || d.no_pr || "-"}</span></div>
-        <div><span class="lbl">Divisi Tujuan</span><span class="val">${d.divisi || "-"}</span></div>
+    <div class="popb-info-grid">
+        <div class="popb-info-cell">
+            <div class="popb-info-icon">${POPB_ICON_CALENDAR}</div>
+            <div>
+                <div class="popb-info-label">Tanggal Kirim</div>
+                <div class="popb-info-value">${sj.tanggal_display || sj.tanggal}</div>
+            </div>
+        </div>
+        <div class="popb-info-cell">
+            <div class="popb-info-icon">${POPB_ICON_DOCUMENT}</div>
+            <div>
+                <div class="popb-info-label">No. PR Terkait</div>
+                <div class="popb-info-value">${sj.no_pr || d.no_pr || "-"}</div>
+            </div>
+        </div>
+        <div class="popb-info-cell">
+            <div class="popb-info-icon">${POPB_ICON_HOME}</div>
+            <div>
+                <div class="popb-info-label">Divisi Tujuan</div>
+                <div class="popb-info-value">${d.divisi || "-"}</div>
+            </div>
+        </div>
     </div>
 
-    <table>
+    <table class="popb-table">
         <thead>
             <tr>
-                <th style="width:34px;">No</th>
+                <th class="popb-num" style="width:34px;">No</th>
                 <th>Nama Barang</th>
-                <th style="width:90px;">Jumlah Kirim</th>
-                <th style="width:70px;">Satuan</th>
+                <th class="popb-num" style="width:90px;">Jumlah Kirim</th>
+                <th class="popb-num" style="width:70px;">Satuan</th>
             </tr>
         </thead>
         <tbody>${baris}</tbody>
     </table>
 
-    <p style="font-size:11.5px; color:#666; margin-top:10px;">
+    <p class="popb-note">
         Catatan: surat jalan ini hanya mencakup sebagian atau seluruh barang dari No. PR terkait,
         sesuai jumlah yang benar-benar dikirim pada tanggal di atas.
     </p>
 
-    <div class="print-sign-grid">
-        <div class="sign-box">
-            Dikirim oleh
-            <div class="line">Purchasing</div>
+    <div class="popb-sign-grid popb-sign-grid-2">
+        <div class="popb-sign-cell">
+            <div class="icon">${POPB_ICON_USER}</div>
+            <div class="label">Dikirim oleh</div>
+            <div class="sign-line"></div>
+            <div class="name">Purchasing</div>
         </div>
-        <div class="sign-box">
-            Diterima oleh
-            <div class="line">Gudang / Pabrik</div>
+        <div class="popb-sign-cell">
+            <div class="icon">${POPB_ICON_PACKAGE}</div>
+            <div class="label">Diterima oleh</div>
+            <div class="sign-line"></div>
+            <div class="name">Gudang / Pabrik</div>
         </div>
     </div>
 
-    <div class="print-footer-note">Dicetak dari sistem Centra - ${new Date().toLocaleString("id-ID")}</div>
+    <div class="popb-footer">Dicetak dari sistem Centra - ${new Date().toLocaleString("id-ID")}</div>
 
 </div>`;
 
@@ -9145,56 +9194,75 @@ function cetakSuratJalanGabungan(noSJ, tanggalDisplay, rows){
 </tr>`).join("");
 
     const html = `
-<div class="print-doc">
+<div class="popb-doc">
 
-    <div class="print-head">
-        <div>
-            <h1>OptiMill Karya Jaya</h1>
-            <p>Surat Jalan (Pengiriman Barang)</p>
+    <div class="popb-head">
+        <div class="popb-head-left">
+            <div class="popb-icon-badge">${POPB_ICON_TRUCK}</div>
+            <div class="popb-titles">
+                <h1>Surat Jalan</h1>
+                <p>Pengiriman Barang (Gabungan)</p>
+            </div>
         </div>
-        <div class="print-nopr">
+        <div class="popb-nopr">
             <div class="label">No. Surat Jalan</div>
             <div class="value">${noSJ}</div>
         </div>
     </div>
 
-    <div class="print-info-grid">
-        <div><span class="lbl">Tanggal Kirim</span><span class="val">${tanggalDisplay}</span></div>
-        <div><span class="lbl">Total Item</span><span class="val">${rows.length}</span></div>
+    <div class="popb-info-grid">
+        <div class="popb-info-cell">
+            <div class="popb-info-icon">${POPB_ICON_CALENDAR}</div>
+            <div>
+                <div class="popb-info-label">Tanggal Kirim</div>
+                <div class="popb-info-value">${tanggalDisplay}</div>
+            </div>
+        </div>
+        <div class="popb-info-cell">
+            <div class="popb-info-icon">${POPB_ICON_DOCUMENT}</div>
+            <div>
+                <div class="popb-info-label">Total Item</div>
+                <div class="popb-info-value">${rows.length}</div>
+            </div>
+        </div>
     </div>
 
-    <table>
+    <table class="popb-table">
         <thead>
             <tr>
-                <th style="width:30px;">No</th>
-                <th style="width:100px;">No. PR Urut</th>
+                <th class="popb-num" style="width:30px;">No</th>
+                <th class="popb-num" style="width:100px;">No. PR Urut</th>
                 <th>Nama Barang</th>
-                <th style="width:70px;">Diminta</th>
-                <th style="width:80px;">Sudah Kirim</th>
-                <th style="width:60px;">Sisa</th>
-                <th style="width:60px;">Satuan</th>
-                <th style="width:90px;">Kirim Sekarang</th>
+                <th class="popb-num" style="width:70px;">Diminta</th>
+                <th class="popb-num" style="width:80px;">Sudah Kirim</th>
+                <th class="popb-num" style="width:60px;">Sisa</th>
+                <th class="popb-num" style="width:60px;">Satuan</th>
+                <th class="popb-num" style="width:90px;">Kirim Sekarang</th>
             </tr>
         </thead>
         <tbody>${baris}</tbody>
     </table>
 
-    <p style="font-size:11.5px; color:#666; margin-top:10px;">
+    <p class="popb-note">
         Catatan: satu Surat Jalan ini bisa mencakup barang dari beberapa No. PR sekaligus, sesuai kolom "No. PR Urut" masing-masing baris.
     </p>
 
-    <div class="print-sign-grid">
-        <div class="sign-box">
-            Dikirim oleh
-            <div class="line">Purchasing</div>
+    <div class="popb-sign-grid popb-sign-grid-2">
+        <div class="popb-sign-cell">
+            <div class="icon">${POPB_ICON_USER}</div>
+            <div class="label">Dikirim oleh</div>
+            <div class="sign-line"></div>
+            <div class="name">Purchasing</div>
         </div>
-        <div class="sign-box">
-            Diterima oleh
-            <div class="line">Gudang / Pabrik</div>
+        <div class="popb-sign-cell">
+            <div class="icon">${POPB_ICON_PACKAGE}</div>
+            <div class="label">Diterima oleh</div>
+            <div class="sign-line"></div>
+            <div class="name">Gudang / Pabrik</div>
         </div>
     </div>
 
-    <div class="print-footer-note">Dicetak dari sistem Centra - ${new Date().toLocaleString("id-ID")}</div>
+    <div class="popb-footer">Dicetak dari sistem Centra - ${new Date().toLocaleString("id-ID")}</div>
 
 </div>`;
 
@@ -9981,36 +10049,20 @@ window.cetakPO = function(id){
     if(!d) return;
 
     const items = d.items || [];
-    const JUMLAH_BARIS_MIN = 6; // dikurangi dari 10 supaya muat di kertas 1/2 F4
+    const rp = (n) => `Rp ${(n || 0).toLocaleString("id-ID")}`;
 
-    const rp = (n) => `<div class="po-rp-flex"><span>Rp</span><span>${(n || 0).toLocaleString("id-ID")}</span></div>`;
-    const rpKosong = `<div class="po-rp-flex"><span>Rp</span><span>-</span></div>`;
-
-    let baris = items.map((it, i) => {
+    const baris = items.map((it, i) => {
         const jumlahRp = (it.jumlah || 0) * (it.harga_satuan || 0);
         return `
 <tr>
-    <td class="num">${i + 1}</td>
+    <td class="popb-num">${i + 1}</td>
     <td>${it.nama_barang || "-"}</td>
-    <td class="num">${it.satuan || "-"}</td>
-    <td class="num">${it.jumlah ?? "-"}</td>
-    <td class="po-rp-cell">${rp(it.harga_satuan)}</td>
-    <td class="po-rp-cell">${rp(jumlahRp)}</td>
+    <td class="popb-num">${it.satuan || "-"}</td>
+    <td class="popb-num">${it.jumlah ?? "-"}</td>
+    <td class="popb-num">${rp(it.harga_satuan)}</td>
+    <td class="popb-num">${rp(jumlahRp)}</td>
 </tr>`;
     }).join("");
-
-    // Padding baris kosong sampai minimal 6 baris, biar tampilan form-nya konsisten seperti kertas PO
-    for(let i = items.length; i < JUMLAH_BARIS_MIN; i++){
-        baris += `
-<tr>
-    <td class="num">${i + 1}</td>
-    <td>-</td>
-    <td class="num">-</td>
-    <td class="num">-</td>
-    <td class="po-rp-cell">${rpKosong}</td>
-    <td class="po-rp-cell">${rpKosong}</td>
-</tr>`;
-    }
 
     const ketSupplierPertama = items.find(it => it.keterangan_supplier)?.keterangan_supplier || "";
 
@@ -10024,82 +10076,120 @@ window.cetakPO = function(id){
         : "CASH";
 
     const html = `
-<div class="print-doc po-cetak-excel">
+<div class="popb-doc">
 
-    <table class="po-cetak-header">
-        <tr>
-            <td class="po-judul" rowspan="4">PURCHASE ORDER</td>
-            <td class="po-label">Kepada Yth</td>
-            <td class="po-isi">${d.vendor || "-"}</td>
-            <td class="po-nopo-cell" rowspan="3" style="width:34%;">
-                <span class="po-nopo-label">No PO:</span>
-                ${d.no_po}
-            </td>
-        </tr>
-        <tr>
-            <td class="po-label">Attn:</td>
-            <td class="po-isi">${d.attn || ""}</td>
-        </tr>
-        <tr>
-            <td class="po-label">Telp:</td>
-            <td class="po-isi">${d.telp || ""}</td>
-        </tr>
-        <tr>
-            <td class="po-label">Fax:</td>
-            <td class="po-isi">${d.fax || ""}</td>
-            <td class="po-tanggal-cell">${d.tanggal_display || "-"}</td>
-        </tr>
-    </table>
+    <div class="popb-head">
+        <div class="popb-head-left">
+            <div class="popb-icon-badge">${POPB_ICON_DOCUMENT}</div>
+            <div class="popb-titles">
+                <h1>Purchase Order</h1>
+                <p>Pesanan Pembelian Barang</p>
+            </div>
+        </div>
+        <div class="popb-nopr">
+            <div class="label">No. PO</div>
+            <div class="value">${d.no_po}</div>
+        </div>
+    </div>
 
-    <p class="po-instruksi">Harap Dikirim ke Alamat Kami, Barang Sebagai Berikut:</p>
+    <div class="popb-info-grid">
+        <div class="popb-info-cell">
+            <div class="popb-info-icon">${POPB_ICON_CALENDAR}</div>
+            <div>
+                <div class="popb-info-label">Tanggal</div>
+                <div class="popb-info-value">${d.tanggal_display || "-"}</div>
+            </div>
+        </div>
+        <div class="popb-info-cell">
+            <div class="popb-info-icon">${POPB_ICON_BUILDING}</div>
+            <div>
+                <div class="popb-info-label">Kepada Yth (Vendor)</div>
+                <div class="popb-info-value">${d.vendor || "-"}</div>
+                ${d.attn ? `<div class="popb-info-sub"><div class="popb-info-sub-label">Attn</div><div class="popb-info-sub-value">${d.attn}</div></div>` : ""}
+            </div>
+        </div>
+        <div class="popb-info-cell">
+            <div class="popb-info-icon">${POPB_ICON_PHONE}</div>
+            <div>
+                <div class="popb-info-label">Telp</div>
+                <div class="popb-info-value">${d.telp || "-"}</div>
+            </div>
+        </div>
+        <div class="popb-info-cell">
+            <div class="popb-info-icon">${POPB_ICON_PRINTER}</div>
+            <div>
+                <div class="popb-info-label">Fax</div>
+                <div class="popb-info-value">${d.fax || "-"}</div>
+            </div>
+        </div>
+    </div>
 
-    <table class="po-cetak-items">
+    <div class="popb-keterangan">
+        <div class="popb-info-icon">${POPB_ICON_CHECK}</div>
+        <div>
+            <div class="popb-info-label">Instruksi</div>
+            <div class="popb-info-value">Harap dikirim ke alamat kami, barang sebagai berikut</div>
+        </div>
+    </div>
+
+    <table class="popb-table">
         <thead>
             <tr>
-                <th style="width:18px;">No</th>
-                <th style="width:300px;">Nama Barang</th>
-                <th style="width:36px;">Satuan</th>
-                <th style="width:30px;">Qty</th>
-                <th style="width:70px;">Harga Satuan</th>
-                <th style="width:76px;">Jumlah</th>
+                <th class="popb-num" style="width:30px;">No</th>
+                <th>Nama Barang</th>
+                <th class="popb-num" style="width:60px;">Satuan</th>
+                <th class="popb-num" style="width:50px;">Qty</th>
+                <th class="popb-num" style="width:100px;">Harga Satuan</th>
+                <th class="popb-num" style="width:110px;">Jumlah</th>
             </tr>
         </thead>
         <tbody>${baris}</tbody>
     </table>
 
-    <table class="po-cetak-summary">
-        <tr><td class="po-sum-label">Diskon</td><td class="po-sum-val po-rp-cell">${rp(totalDiskon)}</td></tr>
-        <tr><td class="po-sum-label">Pph pasal 23</td><td class="po-sum-val po-rp-cell">${rp(totalPPh23)}</td></tr>
-        <tr><td class="po-sum-label">PPN</td><td class="po-sum-val po-rp-cell">${rp(totalPPN)}</td></tr>
-        <tr class="po-sum-total"><td class="po-sum-label">TOTAL</td><td class="po-sum-val po-rp-cell">${rp(d.grand_total)}</td></tr>
-    </table>
+    <div class="popb-summary">
+        <div class="popb-summary-row"><span class="label">Diskon</span><span class="value">${rp(totalDiskon)}</span></div>
+        <div class="popb-summary-row"><span class="label">Pph pasal 23</span><span class="value">${rp(totalPPh23)}</span></div>
+        <div class="popb-summary-row"><span class="label">PPN</span><span class="value">${rp(totalPPN)}</span></div>
+        <div class="popb-summary-row total"><span class="label">TOTAL</span><span class="value">${rp(d.grand_total)}</span></div>
+    </div>
 
-    <div class="po-cetak-perhatian">
+    <p class="popb-note">
         <b>Perhatian:</b><br>
-        - Order pembelian harus di lampirkan pada saat penagihan<br>
-        - No order pembelian harus di cantumkan pada nota<br>
+        - Order pembelian harus dilampirkan pada saat penagihan<br>
+        - No order pembelian harus dicantumkan pada nota<br>
         - Syarat-syarat pembayaran : ${syaratPembayaran}<br>
         - Tanggal kirim : SEGERA
         ${ketSupplierPertama ? `<br>- Keterangan : ${ketSupplierPertama}` : ""}
+    </p>
+
+    <div class="popb-sign-grid">
+        <div class="popb-sign-cell">
+            <div class="icon">${POPB_ICON_USER}</div>
+            <div class="label">Mengetahui</div>
+            <div class="sign-line"></div>
+            <div class="name">Pimpinan</div>
+        </div>
+        <div class="popb-sign-cell">
+            <div class="icon">${POPB_ICON_USER}</div>
+            <div class="label">Dibuat Oleh</div>
+            <div class="sign-line"></div>
+            <div class="name">Purchasing</div>
+        </div>
+        <div class="popb-sign-cell">
+            <div class="icon">${POPB_ICON_USER}</div>
+            <div class="label">Menyetujui</div>
+            <div class="sign-line"></div>
+            <div class="name">Pimpinan</div>
+        </div>
+        <div class="popb-sign-cell">
+            <div class="icon">${POPB_ICON_BUILDING}</div>
+            <div class="label">Supplier</div>
+            <div class="sign-line"></div>
+            <div class="name">&nbsp;</div>
+        </div>
     </div>
 
-    <table class="po-cetak-ttd">
-        <tr>
-            <td>Mengetahui</td>
-            <td>Dibuat Oleh</td>
-            <td>Menyetujui</td>
-            <td>Supplier</td>
-        </tr>
-        <tr class="po-ttd-space"><td></td><td></td><td></td><td></td></tr>
-        <tr>
-            <td>Pimpinan</td>
-            <td>Purchasing</td>
-            <td>Pimpinan</td>
-            <td>&nbsp;</td>
-        </tr>
-    </table>
-
-    <div class="print-footer-note">Dicetak dari sistem Centra - ${new Date().toLocaleString("id-ID")}</div>
+    <div class="popb-footer">Dicetak dari sistem Centra - ${new Date().toLocaleString("id-ID")}</div>
 
 </div>`;
 
@@ -10717,108 +10807,135 @@ window.cetakBMB = function(id){
     if(!d) return;
 
     const items = d.items || [];
-    const JUMLAH_BARIS_MIN = 6;
+    const rp = (n) => `Rp ${(n || 0).toLocaleString("id-ID")}`;
 
-    const rp = (n) => `<div class="po-rp-flex"><span>Rp</span><span>${(n || 0).toLocaleString("id-ID")}</span></div>`;
-    const rpKosong = `<div class="po-rp-flex"><span>Rp</span><span>-</span></div>`;
-
-    let baris = items.map((it, i) => `
+    const baris = items.map((it, i) => `
 <tr>
-    <td class="num">${i + 1}</td>
+    <td class="popb-num">${i + 1}</td>
     <td>${it.nama_barang || "-"}</td>
-    <td class="num">${it.satuan || "-"}</td>
-    <td class="num">${it.jumlah_diterima ?? "-"}</td>
-    <td class="po-rp-cell">${rp(it.harga_satuan)}</td>
-    <td class="po-rp-cell">${rp(it.total_harga)}</td>
-    <td>${d.keterangan || "-"}</td>
+    <td class="popb-num">${it.satuan || "-"}</td>
+    <td class="popb-num">${it.jumlah_diterima ?? "-"}</td>
+    <td class="popb-num">${rp(it.harga_satuan)}</td>
+    <td class="popb-num">${rp(it.total_harga)}</td>
 </tr>`).join("");
 
-    for(let i = items.length; i < JUMLAH_BARIS_MIN; i++){
-        baris += `
-<tr>
-    <td class="num">${i + 1}</td>
-    <td>-</td>
-    <td class="num">-</td>
-    <td class="num">-</td>
-    <td class="po-rp-cell">${rpKosong}</td>
-    <td class="po-rp-cell">${rpKosong}</td>
-    <td>-</td>
-</tr>`;
-    }
-
     const html = `
-<div class="print-doc po-cetak-excel">
+<div class="popb-doc">
 
-    <table class="po-cetak-header">
-        <tr>
-            <td class="po-judul" rowspan="5">BMB</td>
-            <td class="po-label">Supplier:</td>
-            <td class="po-isi">${d.supplier || "-"}</td>
-            <td class="po-nopo-cell" rowspan="2" style="width:34%;">
-                <span class="po-nopo-label">No BMB:</span>
-                ${d.no_bmb}
-            </td>
-        </tr>
-        <tr>
-            <td class="po-label">Tanggal:</td>
-            <td class="po-isi">${d.tanggal_display || "-"}</td>
-        </tr>
-        <tr>
-            <td class="po-label">Untuk:</td>
-            <td class="po-isi">${d.untuk || "-"}</td>
-            <td class="po-nopo-cell" rowspan="3">
-                <span class="po-nopo-label">No PO:</span>
-                ${d.no_po || "-"}
-            </td>
-        </tr>
-        <tr>
-            <td class="po-label">Pembeli:</td>
-            <td class="po-isi">${d.pembeli || "-"}</td>
-        </tr>
-        <tr>
-            <td class="po-label">No. Pnm:</td>
-            <td class="po-isi">${d.no_penerimaan || "-"}</td>
-        </tr>
-    </table>
+    <div class="popb-head">
+        <div class="popb-head-left">
+            <div class="popb-icon-badge">${POPB_ICON_RECEIPT}</div>
+            <div class="popb-titles">
+                <h1>Bukti Membeli Barang</h1>
+                <p>Faktur Pembelian (BMB)</p>
+            </div>
+        </div>
+        <div class="popb-nopr">
+            <div class="label">No. BMB</div>
+            <div class="value">${d.no_bmb || "-"}</div>
+        </div>
+    </div>
 
-    <table class="po-cetak-items" style="margin-top:10px;">
+    <div class="popb-info-grid">
+        <div class="popb-info-cell">
+            <div class="popb-info-icon">${POPB_ICON_CALENDAR}</div>
+            <div>
+                <div class="popb-info-label">Tanggal</div>
+                <div class="popb-info-value">${d.tanggal_display || "-"}</div>
+            </div>
+        </div>
+        <div class="popb-info-cell">
+            <div class="popb-info-icon">${POPB_ICON_BUILDING}</div>
+            <div>
+                <div class="popb-info-label">Supplier</div>
+                <div class="popb-info-value">${d.supplier || "-"}</div>
+            </div>
+        </div>
+        <div class="popb-info-cell">
+            <div class="popb-info-icon">${POPB_ICON_USER}</div>
+            <div>
+                <div class="popb-info-label">Pembeli</div>
+                <div class="popb-info-value">${d.pembeli || "-"}</div>
+            </div>
+        </div>
+        <div class="popb-info-cell">
+            <div class="popb-info-icon">${POPB_ICON_INBOX}</div>
+            <div>
+                <div class="popb-info-label">Untuk</div>
+                <div class="popb-info-value">${d.untuk || "-"}</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="popb-info-grid">
+        <div class="popb-info-cell">
+            <div class="popb-info-icon">${POPB_ICON_DOCUMENT}</div>
+            <div>
+                <div class="popb-info-label">No. PO</div>
+                <div class="popb-info-value">${d.no_po || "-"}</div>
+            </div>
+        </div>
+        <div class="popb-info-cell">
+            <div class="popb-info-icon">${POPB_ICON_RECEIPT}</div>
+            <div>
+                <div class="popb-info-label">No. Penerimaan</div>
+                <div class="popb-info-value">${d.no_penerimaan || "-"}</div>
+            </div>
+        </div>
+    </div>
+
+    ${d.keterangan ? `
+    <div class="popb-keterangan">
+        <div class="popb-info-icon">${POPB_ICON_HOME}</div>
+        <div>
+            <div class="popb-info-label">Keterangan</div>
+            <div class="popb-info-value">${d.keterangan}</div>
+        </div>
+    </div>` : ""}
+
+    <table class="popb-table">
         <thead>
             <tr>
-                <th style="width:16px;">No</th>
-                <th style="width:250px;">Nama Barang</th>
-                <th style="width:34px;">Satuan</th>
-                <th style="width:28px;">Qty</th>
-                <th style="width:66px;">Harga Satuan</th>
-                <th style="width:70px;">Jumlah</th>
-                <th style="width:120px;">Keterangan</th>
+                <th class="popb-num" style="width:30px;">No</th>
+                <th>Nama Barang</th>
+                <th class="popb-num" style="width:60px;">Satuan</th>
+                <th class="popb-num" style="width:50px;">Qty</th>
+                <th class="popb-num" style="width:100px;">Harga Satuan</th>
+                <th class="popb-num" style="width:110px;">Jumlah</th>
             </tr>
         </thead>
         <tbody>${baris}</tbody>
     </table>
 
-    <table class="po-cetak-summary">
-        <tr><td class="po-sum-label">Diskon</td><td class="po-sum-val po-rp-cell">${rp(d.diskon)}</td></tr>
-        <tr><td class="po-sum-label">Pph pasal 23</td><td class="po-sum-val po-rp-cell">${rp(d.pph23)}</td></tr>
-        <tr><td class="po-sum-label">PPN</td><td class="po-sum-val po-rp-cell">${rp(d.ppn)}</td></tr>
-        <tr class="po-sum-total"><td class="po-sum-label">TOTAL</td><td class="po-sum-val po-rp-cell">${rp(d.grand_total)}</td></tr>
-    </table>
+    <div class="popb-summary">
+        <div class="popb-summary-row"><span class="label">Diskon</span><span class="value">${rp(d.diskon)}</span></div>
+        <div class="popb-summary-row"><span class="label">Pph pasal 23</span><span class="value">${rp(d.pph23)}</span></div>
+        <div class="popb-summary-row"><span class="label">PPN</span><span class="value">${rp(d.ppn)}</span></div>
+        <div class="popb-summary-row total"><span class="label">TOTAL</span><span class="value">${rp(d.grand_total)}</span></div>
+    </div>
 
-    <table class="po-cetak-ttd">
-        <tr>
-            <td style="text-align:left; vertical-align:top; font-weight:400;">${d.keterangan || ""}</td>
-            <td>PEMBELI</td>
-            <td>Admin</td>
-            <td>Acc</td>
-        </tr>
-        <tr class="po-ttd-space">
-            <td></td>
-            <td>${d.pembeli || ""}</td>
-            <td></td>
-            <td></td>
-        </tr>
-    </table>
+    <div class="popb-sign-grid popb-sign-grid-3">
+        <div class="popb-sign-cell">
+            <div class="icon">${POPB_ICON_USER}</div>
+            <div class="label">Pembeli</div>
+            <div class="sign-line"></div>
+            <div class="name">${d.pembeli || "-"}</div>
+        </div>
+        <div class="popb-sign-cell">
+            <div class="icon">${POPB_ICON_USER}</div>
+            <div class="label">Admin</div>
+            <div class="sign-line"></div>
+            <div class="name">&nbsp;</div>
+        </div>
+        <div class="popb-sign-cell">
+            <div class="icon">${POPB_ICON_CHECK}</div>
+            <div class="label">Acc</div>
+            <div class="sign-line"></div>
+            <div class="name">&nbsp;</div>
+        </div>
+    </div>
 
-    <div class="print-footer-note">Dicetak dari sistem Centra - ${new Date().toLocaleString("id-ID")}</div>
+    <div class="popb-footer">Dicetak dari sistem Centra - ${new Date().toLocaleString("id-ID")}</div>
 
 </div>`;
 
@@ -12987,14 +13104,16 @@ window.cetakKBB = function(id){
     if(!d) return;
 
     const items = d.items || [];
+    const totalDiambil = items.reduce((a, b) => a + (Number(b.jumlah_diambil) || 0), 0);
+    const totalDikembalikan = items.reduce((a, b) => a + (Number(b.jumlah_dikembalikan) || 0), 0);
 
     const baris = items.map((it, i) => `
 <tr>
-    <td class="num">${i + 1}</td>
+    <td class="popb-num">${i + 1}</td>
     <td>${it.nama_barang || "-"}</td>
-    <td class="num">${it.satuan || "-"}</td>
-    <td class="num">${it.jumlah_diambil ?? "-"}</td>
-    <td class="num">${it.jumlah_dikembalikan ?? "-"}</td>
+    <td class="popb-num">${it.satuan || "-"}</td>
+    <td class="popb-num">${it.jumlah_diambil ?? "-"}</td>
+    <td class="popb-num">${it.jumlah_dikembalikan ?? "-"}</td>
     <td>${it.keterangan || "-"}</td>
 </tr>`).join("");
 
@@ -13002,58 +13121,83 @@ window.cetakKBB = function(id){
     const itemAdaFoto = items.filter(it => it.foto_url);
     const galeriFotoHtml = itemAdaFoto.length > 0
         ? `
-<div class="kbb-cetak-galeri-judul">Lampiran Foto Barang Bekas</div>
-<div class="kbb-cetak-galeri">
-    ${itemAdaFoto.map(it => `
-        <div class="kbb-cetak-foto-item">
-            <img src="${it.foto_url}" crossorigin="anonymous">
-            <div class="kbb-cetak-foto-caption">${it.nama_barang || "-"}</div>
-        </div>
-    `).join("")}
+<div class="popb-gallery-wrap">
+    <div class="popb-gallery-title">Lampiran Foto Barang Bekas</div>
+    <div class="kbb-cetak-galeri">
+        ${itemAdaFoto.map(it => `
+            <div class="kbb-cetak-foto-item">
+                <img src="${it.foto_url}" crossorigin="anonymous">
+                <div class="kbb-cetak-foto-caption">${it.nama_barang || "-"}</div>
+            </div>
+        `).join("")}
+    </div>
 </div>`
         : `<p style="font-size:11px; color:#8d8d8d; margin-top:14px;">Tidak ada foto lampiran untuk KBB ini.</p>`;
 
     const html = `
-<div class="print-doc po-cetak-excel">
+<div class="popb-doc">
 
-    <table class="po-cetak-header">
-        <tr>
-            <td class="po-judul" rowspan="3">KBB</td>
-            <td class="po-label">No. KBB:</td>
-            <td class="po-isi">${d.no_kbb || "-"}</td>
-        </tr>
-        <tr>
-            <td class="po-label">No. BKB:</td>
-            <td class="po-isi">${d.no_bkb || "-"}</td>
-        </tr>
-        <tr>
-            <td class="po-label">Tanggal:</td>
-            <td class="po-isi">${d.tanggal_display || "-"}</td>
-        </tr>
-        <tr>
-            <td></td>
-            <td class="po-label">Diambil Oleh:</td>
-            <td class="po-isi">${d.nama_user || "-"}</td>
-        </tr>
-    </table>
+    <div class="popb-head">
+        <div class="popb-head-left">
+            <div class="popb-icon-badge">${POPB_ICON_REFRESH}</div>
+            <div class="popb-titles">
+                <h1>Bukti Kembali Barang</h1>
+                <p>Pengembalian Barang Bekas (KBB)</p>
+            </div>
+        </div>
+        <div class="popb-nopr">
+            <div class="label">No. KBB</div>
+            <div class="value">${d.no_kbb || "-"}</div>
+        </div>
+    </div>
 
-    <table class="po-cetak-items" style="margin-top:10px;">
+    <div class="popb-info-grid">
+        <div class="popb-info-cell">
+            <div class="popb-info-icon">${POPB_ICON_CALENDAR}</div>
+            <div>
+                <div class="popb-info-label">Tanggal</div>
+                <div class="popb-info-value">${d.tanggal_display || "-"}</div>
+            </div>
+        </div>
+        <div class="popb-info-cell">
+            <div class="popb-info-icon">${POPB_ICON_DOCUMENT}</div>
+            <div>
+                <div class="popb-info-label">No. BKB</div>
+                <div class="popb-info-value">${d.no_bkb || "-"}</div>
+            </div>
+        </div>
+        <div class="popb-info-cell">
+            <div class="popb-info-icon">${POPB_ICON_USER}</div>
+            <div>
+                <div class="popb-info-label">Diambil Oleh</div>
+                <div class="popb-info-value">${d.nama_user || "-"}</div>
+            </div>
+        </div>
+    </div>
+
+    <table class="popb-table">
         <thead>
             <tr>
-                <th style="width:16px;">No</th>
-                <th style="width:260px;">Nama Barang</th>
-                <th style="width:50px;">Satuan</th>
-                <th style="width:80px;">Jml Diambil</th>
-                <th style="width:100px;">Jml Dikembalikan</th>
+                <th class="popb-num" style="width:30px;">No</th>
+                <th>Nama Barang</th>
+                <th class="popb-num" style="width:60px;">Satuan</th>
+                <th class="popb-num" style="width:90px;">Jml Diambil</th>
+                <th class="popb-num" style="width:100px;">Jml Dikembalikan</th>
                 <th>Keterangan</th>
             </tr>
         </thead>
         <tbody>${baris}</tbody>
     </table>
 
+    <div class="popb-totals">
+        <div class="popb-total-box"><div class="label">Total Item</div><div class="value">${items.length}</div></div>
+        <div class="popb-total-box"><div class="label">Total Diambil</div><div class="value">${totalDiambil}</div></div>
+        <div class="popb-total-box"><div class="label">Total Dikembalikan</div><div class="value">${totalDikembalikan}</div></div>
+    </div>
+
     ${galeriFotoHtml}
 
-    <div class="print-footer-note">Dicetak dari sistem Centra - ${new Date().toLocaleString("id-ID")}</div>
+    <div class="popb-footer">Dicetak dari sistem Centra - ${new Date().toLocaleString("id-ID")}</div>
 
 </div>`;
 
@@ -13092,62 +13236,106 @@ window.cetakBKB = function(id){
 </tr>`).join("");
 
     const ttdBaris = `
-<div class="print-sign-grid">
-    <div class="sign-box">
-        Diambil oleh (${d.nama_user || "-"})
-        ${d.ttd_user ? `<img src="${d.ttd_user}" style="width:100%;max-width:160px;height:60px;object-fit:contain;margin-top:8px;">` : `<div class="line"></div>`}
+<div class="popb-sign-grid popb-sign-grid-3">
+    <div class="popb-sign-cell">
+        <div class="icon">${POPB_ICON_USER}</div>
+        <div class="label">Diambil oleh</div>
+        ${d.ttd_user ? `<img src="${d.ttd_user}">` : `<div class="sign-line"></div>`}
+        <div class="name">${d.nama_user || "-"}</div>
     </div>
-    <div class="sign-box">
-        Diketahui / Disetujui
-        <div class="line">Kepala Gudang</div>
+    <div class="popb-sign-cell">
+        <div class="icon">${POPB_ICON_USER}</div>
+        <div class="label">Diketahui / Disetujui</div>
+        <div class="sign-line"></div>
+        <div class="name">Kepala Gudang</div>
     </div>
-    <div class="sign-box">
-        Diserahkan oleh Gudang (${d.petugas_gudang || "-"})
-        ${d.ttd_gudang ? `<img src="${d.ttd_gudang}" style="width:100%;max-width:160px;height:60px;object-fit:contain;margin-top:8px;">` : `<div class="line"></div>`}
+    <div class="popb-sign-cell">
+        <div class="icon">${POPB_ICON_PACKAGE}</div>
+        <div class="label">Diserahkan oleh Gudang</div>
+        ${d.ttd_gudang ? `<img src="${d.ttd_gudang}">` : `<div class="sign-line"></div>`}
+        <div class="name">${d.petugas_gudang || "-"}</div>
     </div>
 </div>`;
 
     const html = `
-<div class="print-doc">
+<div class="popb-doc">
 
-    <div class="print-head">
-        <div>
-            <h1>OptiMill Karya Jaya</h1>
-            <p>Bukti Kirim / Keluar Barang (BKB)</p>
+    <div class="popb-head">
+        <div class="popb-head-left">
+            <div class="popb-icon-badge">${POPB_ICON_PACKAGE}</div>
+            <div class="popb-titles">
+                <h1>Bukti Kirim / Keluar Barang</h1>
+                <p>Pengambilan Barang Gudang (BKB)</p>
+            </div>
         </div>
-        <div class="print-nopr">
+        <div class="popb-nopr">
             <div class="label">No. BKB</div>
             <div class="value">${d.no_bkb || "-"}</div>
         </div>
     </div>
 
-    <div class="print-info-grid">
-        <div><span class="lbl">Tanggal</span><span class="val">${d.tanggal_display || tgl}</span></div>
-        <div><span class="lbl">Jam</span><span class="val">${d.jam || "-"}</span></div>
-        <div><span class="lbl">Nama User</span><span class="val">${d.nama_user || "-"}</span></div>
-        <div><span class="lbl">Status</span><span class="val">${labelStatus}</span></div>
-        <div><span class="lbl">Divisi</span><span class="val">${d.divisi || "-"}</span></div>
-        <div><span class="lbl">Untuk</span><span class="val">${d.untuk || "-"}</span></div>
+    <div class="popb-info-grid">
+        <div class="popb-info-cell">
+            <div class="popb-info-icon">${POPB_ICON_CALENDAR}</div>
+            <div>
+                <div class="popb-info-label">Tanggal</div>
+                <div class="popb-info-value">${d.tanggal_display || tgl}</div>
+            </div>
+        </div>
+        <div class="popb-info-cell">
+            <div class="popb-info-icon">${POPB_ICON_CLOCK}</div>
+            <div>
+                <div class="popb-info-label">Jam</div>
+                <div class="popb-info-value">${d.jam || "-"}</div>
+            </div>
+        </div>
+        <div class="popb-info-cell">
+            <div class="popb-info-icon">${POPB_ICON_USER}</div>
+            <div>
+                <div class="popb-info-label">Nama User</div>
+                <div class="popb-info-value">${d.nama_user || "-"}</div>
+                ${d.divisi ? `<div class="popb-info-sub"><div class="popb-info-sub-label">Divisi</div><div class="popb-info-sub-value">${d.divisi}</div></div>` : ""}
+            </div>
+        </div>
+        <div class="popb-info-cell">
+            <div class="popb-info-icon">${POPB_ICON_CHECK}</div>
+            <div>
+                <div class="popb-info-label">Status</div>
+                <div class="popb-info-value">${labelStatus}</div>
+            </div>
+        </div>
     </div>
 
-    <table>
+    ${d.untuk ? `
+    <div class="popb-keterangan">
+        <div class="popb-info-icon">${POPB_ICON_HOME}</div>
+        <div>
+            <div class="popb-info-label">Untuk</div>
+            <div class="popb-info-value">${d.untuk}</div>
+        </div>
+    </div>` : ""}
+
+    <table class="popb-table">
         <thead>
             <tr>
-                <th style="width:34px;">No</th>
+                <th class="popb-num" style="width:34px;">No</th>
                 <th>Nama Barang</th>
-                <th style="width:90px;">Jumlah</th>
-                <th style="width:80px;">Satuan</th>
-                <th style="width:100px;">Stock Saat Ini</th>
+                <th class="popb-num" style="width:90px;">Jumlah</th>
+                <th class="popb-num" style="width:80px;">Satuan</th>
+                <th class="popb-num" style="width:100px;">Stock Saat Ini</th>
             </tr>
         </thead>
         <tbody>${baris}</tbody>
     </table>
 
-    <div class="print-totals">Total Item: ${d.total_item ?? items.length} &nbsp; | &nbsp; Total Jumlah: ${d.total_jumlah ?? "-"}</div>
+    <div class="popb-totals">
+        <div class="popb-total-box"><div class="label">Total Item</div><div class="value">${d.total_item ?? items.length}</div></div>
+        <div class="popb-total-box"><div class="label">Total Jumlah</div><div class="value">${d.total_jumlah ?? "-"}</div></div>
+    </div>
 
     ${ttdBaris}
 
-    <div class="print-footer-note">Dicetak dari sistem Centra - ${new Date().toLocaleString("id-ID")}</div>
+    <div class="popb-footer">Dicetak dari sistem Centra - ${new Date().toLocaleString("id-ID")}</div>
 
 </div>`;
 
@@ -14296,55 +14484,97 @@ window.cetakPenerimaan = function(id){
 </tr>`).join("");
 
     const html = `
-<div class="print-doc">
+<div class="popb-doc">
 
-    <div class="print-head">
-        <div>
-            <h1>OptiMill Karya Jaya</h1>
-            <p>Bukti Penerimaan Barang</p>
+    <div class="popb-head">
+        <div class="popb-head-left">
+            <div class="popb-icon-badge">${POPB_ICON_INBOX}</div>
+            <div class="popb-titles">
+                <h1>Bukti Penerimaan Barang</h1>
+                <p>Tanda Terima Barang Masuk (TTB)</p>
+            </div>
         </div>
-        <div class="print-nopr">
+        <div class="popb-nopr">
             <div class="label">No. Penerimaan</div>
             <div class="value">${d.no_penerimaan || "-"}</div>
         </div>
     </div>
 
-    <div class="print-info-grid">
-        <div><span class="lbl">Tanggal</span><span class="val">${d.tanggal_display || tgl}</span></div>
-        <div><span class="lbl">Status</span><span class="val">${labelStatus}</span></div>
-        <div><span class="lbl">No Referensi</span><span class="val">${d.referensi || "-"}</span></div>
-        <div><span class="lbl">Diterima Oleh</span><span class="val">${d.penerima || "-"}</span></div>
-        <div><span class="lbl">Keterangan</span><span class="val">${d.keterangan || "-"}</span></div>
+    <div class="popb-info-grid">
+        <div class="popb-info-cell">
+            <div class="popb-info-icon">${POPB_ICON_CALENDAR}</div>
+            <div>
+                <div class="popb-info-label">Tanggal</div>
+                <div class="popb-info-value">${d.tanggal_display || tgl}</div>
+            </div>
+        </div>
+        <div class="popb-info-cell">
+            <div class="popb-info-icon">${POPB_ICON_DOCUMENT}</div>
+            <div>
+                <div class="popb-info-label">No Referensi</div>
+                <div class="popb-info-value">${d.referensi || "-"}</div>
+            </div>
+        </div>
+        <div class="popb-info-cell">
+            <div class="popb-info-icon">${POPB_ICON_USER}</div>
+            <div>
+                <div class="popb-info-label">Diterima Oleh</div>
+                <div class="popb-info-value">${d.penerima || "-"}</div>
+            </div>
+        </div>
+        <div class="popb-info-cell">
+            <div class="popb-info-icon">${POPB_ICON_CHECK}</div>
+            <div>
+                <div class="popb-info-label">Status</div>
+                <div class="popb-info-value">${labelStatus}</div>
+            </div>
+        </div>
     </div>
 
-    <table>
+    ${d.keterangan ? `
+    <div class="popb-keterangan">
+        <div class="popb-info-icon">${POPB_ICON_HOME}</div>
+        <div>
+            <div class="popb-info-label">Keterangan</div>
+            <div class="popb-info-value">${d.keterangan}</div>
+        </div>
+    </div>` : ""}
+
+    <table class="popb-table">
         <thead>
             <tr>
-                <th style="width:34px;">No</th>
+                <th class="popb-num" style="width:34px;">No</th>
                 <th>Nama Barang</th>
-                <th style="width:90px;">Jumlah</th>
-                <th style="width:70px;">Satuan</th>
-                <th style="width:90px;">Stok Sebelum</th>
-                <th style="width:90px;">Stok Sesudah</th>
+                <th class="popb-num" style="width:90px;">Jumlah</th>
+                <th class="popb-num" style="width:70px;">Satuan</th>
+                <th class="popb-num" style="width:90px;">Stok Sebelum</th>
+                <th class="popb-num" style="width:90px;">Stok Sesudah</th>
             </tr>
         </thead>
         <tbody>${baris}</tbody>
     </table>
 
-    <div class="print-totals">Total Item: ${d.total_item ?? items.length} &nbsp; | &nbsp; Total Jumlah: ${d.total_jumlah ?? "-"}</div>
+    <div class="popb-totals">
+        <div class="popb-total-box"><div class="label">Total Item</div><div class="value">${d.total_item ?? items.length}</div></div>
+        <div class="popb-total-box"><div class="label">Total Jumlah</div><div class="value">${d.total_jumlah ?? "-"}</div></div>
+    </div>
 
-    <div class="print-sign-grid">
-        <div class="sign-box">
-            Diterima oleh
-            <div class="line">${d.penerima || "-"}</div>
+    <div class="popb-sign-grid popb-sign-grid-2">
+        <div class="popb-sign-cell">
+            <div class="icon">${POPB_ICON_USER}</div>
+            <div class="label">Diterima oleh</div>
+            <div class="sign-line"></div>
+            <div class="name">${d.penerima || "-"}</div>
         </div>
-        <div class="sign-box">
-            Diketahui / Disetujui
-            <div class="line">Kepala Gudang</div>
+        <div class="popb-sign-cell">
+            <div class="icon">${POPB_ICON_USER}</div>
+            <div class="label">Diketahui / Disetujui</div>
+            <div class="sign-line"></div>
+            <div class="name">Kepala Gudang</div>
         </div>
     </div>
 
-    <div class="print-footer-note">Dicetak dari sistem Centra - ${new Date().toLocaleString("id-ID")}</div>
+    <div class="popb-footer">Dicetak dari sistem Centra - ${new Date().toLocaleString("id-ID")}</div>
 
 </div>`;
 

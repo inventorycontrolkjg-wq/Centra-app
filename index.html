@@ -13694,22 +13694,26 @@ async function simpanBkbTransaksi(status, items, dataDoc){
 
     const tanggalISO = dataDoc.tanggal;
     const { yy, mm, key } = komponenTahunBulan(tanggalISO);
-    const counterRef = doc(db, "counters", `bkb_${key}`);
     const docRef = doc(collection(db, "pengambilan_barang"));
     const potongStok = status !== "draft";
 
     return await runTransaction(db, async (tx) => {
 
         // ---- semua READ dulu ----
-        const snapCounter = await tx.get(counterRef);
         const rencana = potongStok ? await bacaRencanaStok(tx, items) : [];
         if(potongStok) validasiStokCukup(rencana);
 
-        // ---- baru WRITE ----
-        const nomor = nomorBerikutnyaDari(snapCounter);
+        // ---- baru ambil nomor & WRITE ----
+        // PENTING: nomor dokumen WAJIB lewat incrementCounter() (RPC Postgres
+        // yang atomik & security definer) -- tabel "counters" sengaja TIDAK
+        // BISA ditulis langsung oleh klien manapun (lihat 02_rls_policies.sql).
+        // Dulu di sini pakai tx.get(counterRef) + tx.set(counterRef, ...)
+        // manual, yang SELALU melanggar RLS -- cuma dulu error-nya "hilang"
+        // begitu saja gara-gara bug runTransaction (lihat catatan di
+        // definisinya), makanya baru ketahuan sekarang.
+        const nomor = await incrementCounter(`bkb_${key}`);
         const noBKB = `${yy}${mm}${String(nomor).padStart(3, "0")}`;
 
-        tx.set(counterRef, { terakhir: nomor }, { merge: true });
         if(potongStok) tulisRencanaStok(tx, rencana, -1);
         tx.set(docRef, Object.assign({ no_bkb: noBKB }, dataDoc));
 
@@ -14202,7 +14206,6 @@ async function simpanPnmTransaksi(status, items, sjTerhubung, dataDoc){
 
     const tanggalISO = dataDoc.tanggal;
     const { yy, mm, key } = komponenTahunBulan(tanggalISO);
-    const counterRef = doc(db, "counters", `pnm_${key}`);
     const docRef = doc(collection(db, "penerimaan_barang"));
     const final = status !== "draft";
 
@@ -14215,18 +14218,23 @@ async function simpanPnmTransaksi(status, items, sjTerhubung, dataDoc){
     return await runTransaction(db, async (tx) => {
 
         // ---- semua READ dulu ----
-        const snapCounter = await tx.get(counterRef);
         const snapsPR = [];
         for(const ref of refsPR){
             snapsPR.push(await tx.get(ref));
         }
         const rencana = final ? await bacaRencanaStok(tx, items) : [];
 
-        // ---- baru WRITE ----
-        const nomor = nomorBerikutnyaDari(snapCounter);
+        // ---- baru ambil nomor & WRITE ----
+        // PENTING: nomor dokumen WAJIB lewat incrementCounter() (RPC Postgres
+        // yang atomik & security definer) -- tabel "counters" sengaja TIDAK
+        // BISA ditulis langsung oleh klien manapun (lihat 02_rls_policies.sql).
+        // Dulu di sini pakai tx.get(counterRef) + tx.set(counterRef, ...)
+        // manual, yang SELALU melanggar RLS -- cuma dulu error-nya "hilang"
+        // begitu saja gara-gara bug runTransaction (lihat catatan di
+        // definisinya), makanya baru ketahuan sekarang.
+        const nomor = await incrementCounter(`pnm_${key}`);
         const noPnm = `${yy}${mm}${String(nomor).padStart(3, "0")}`;
 
-        tx.set(counterRef, { terakhir: nomor }, { merge: true });
         if(final) tulisRencanaStok(tx, rencana, +1);
 
         const noPRGabungan = snapsPR

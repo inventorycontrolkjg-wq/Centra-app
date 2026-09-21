@@ -3863,6 +3863,16 @@ function isSentinel(v, type){
     return v && typeof v === "object" && v.__type === type;
 }
 
+// Nama kolom primary key per tabel -- SEMUA tabel pakai "id", KECUALI
+// "counters" yang primary key-nya bernama "key" (lihat 01_schema.sql).
+// Tanpa ini, setiap baca/tulis/hapus ke tabel counters lewat doc()/getDoc()/
+// setDoc()/updateDoc()/deleteDoc() akan gagal ("column counters.id does not
+// exist") -- makanya preview nomor urut (PR/BMB/BKB/KBB/Penerimaan) sempat
+// selalu jatuh ke fallback "????".
+function kolomId(table){
+    return table === "counters" ? "key" : "id";
+}
+
 // ---------------------------------------------------------
 // Reference builders: doc(), collection(), query(), where(), orderBy(), limit()
 // ---------------------------------------------------------
@@ -3978,11 +3988,12 @@ function bungkusTimestamp(row){
 function bikinDocSnapshot(row, table){
     const ada = !!row;
     const dataAsli = ada ? bungkusTimestamp(row) : null;
+    const idVal = ada ? row[kolomId(table)] : undefined;
     return {
         exists: () => ada,
         data: () => dataAsli,
-        id: ada ? row.id : undefined,
-        ref: ada ? { __type: "doc", table, id: row.id } : undefined
+        id: idVal,
+        ref: ada ? { __type: "doc", table, id: idVal } : undefined
     };
 }
 
@@ -4001,7 +4012,7 @@ function bikinQuerySnapshot(rows, table){
 // ---------------------------------------------------------
 
 async function getDoc(docRef){
-    const { data, error } = await sb.from(docRef.table).select("*").eq("id", docRef.id).maybeSingle();
+    const { data, error } = await sb.from(docRef.table).select("*").eq(kolomId(docRef.table), docRef.id).maybeSingle();
     if(error) throw error;
     return bikinDocSnapshot(data, docRef.table);
 }
@@ -4071,17 +4082,19 @@ async function addDoc(collRef, data){
 }
 
 async function setDoc(docRef, data, options){
+    const idCol = kolomId(docRef.table);
+
     // arrayUnion butuh nilai lama dari kolomnya dulu supaya benar-benar
     // "ditambahkan", bukan menimpa jadi array 1 elemen -- sama seperti updateDoc.
     const kolomArrayUnion = Object.keys(data).filter(k => isSentinel(data[k], "sentinel_arrayUnion"));
     let nilaiLama = {};
     if(kolomArrayUnion.length > 0 && options && options.merge){
-        const { data: existing, error: errGet } = await sb.from(docRef.table).select(kolomArrayUnion.join(",")).eq("id", docRef.id).maybeSingle();
+        const { data: existing, error: errGet } = await sb.from(docRef.table).select(kolomArrayUnion.join(",")).eq(idCol, docRef.id).maybeSingle();
         if(errGet) throw errGet;
         nilaiLama = existing || {};
     }
 
-    const payload = { id: docRef.id };
+    const payload = { [idCol]: docRef.id };
     for(const k in data){
         const v = data[k];
         if(isSentinel(v, "sentinel_arrayUnion")){
@@ -4096,11 +4109,12 @@ async function setDoc(docRef, data, options){
         }
     }
 
-    const { error } = await sb.from(docRef.table).upsert(payload, { onConflict: "id" });
+    const { error } = await sb.from(docRef.table).upsert(payload, { onConflict: idCol });
     if(error) throw error;
 }
 
 async function updateDoc(docRef, data){
+    const idCol = kolomId(docRef.table);
     const { flat, nested } = pisahkanDotPath(data);
 
     let payload = { ...flat };
@@ -4108,7 +4122,7 @@ async function updateDoc(docRef, data){
     // Tangani arrayUnion di level atas (kolom jsonb array)
     for(const k in payload){
         if(isSentinel(payload[k], "sentinel_arrayUnion")){
-            const { data: existing, error: errGet } = await sb.from(docRef.table).select(k).eq("id", docRef.id).maybeSingle();
+            const { data: existing, error: errGet } = await sb.from(docRef.table).select(k).eq(idCol, docRef.id).maybeSingle();
             if(errGet) throw errGet;
             const arrLama = (existing && existing[k]) || [];
             payload[k] = [...arrLama, payload[k].value];
@@ -4122,7 +4136,7 @@ async function updateDoc(docRef, data){
     // Tangani nested dot-path (misal "items.2.qty") -- perlu baca dulu kolom induknya
     if(Object.keys(nested).length > 0){
         const kolomInduk = [...new Set(Object.keys(nested).map(p => p.split(".")[0]))];
-        const { data: existing, error: errGet } = await sb.from(docRef.table).select(kolomInduk.join(",")).eq("id", docRef.id).maybeSingle();
+        const { data: existing, error: errGet } = await sb.from(docRef.table).select(kolomInduk.join(",")).eq(idCol, docRef.id).maybeSingle();
         if(errGet) throw errGet;
 
         const gabungan = { ...(existing || {}) };
@@ -4137,12 +4151,12 @@ async function updateDoc(docRef, data){
         }
     }
 
-    const { error } = await sb.from(docRef.table).update(payload).eq("id", docRef.id);
+    const { error } = await sb.from(docRef.table).update(payload).eq(idCol, docRef.id);
     if(error) throw error;
 }
 
 async function deleteDoc(docRef){
-    const { error } = await sb.from(docRef.table).delete().eq("id", docRef.id);
+    const { error } = await sb.from(docRef.table).delete().eq(kolomId(docRef.table), docRef.id);
     if(error) throw error;
 }
 

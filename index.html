@@ -922,10 +922,10 @@ table.po-cetak-ttd .po-ttd-space td{ height:100px; border-top:none; }
 
 .popb-sign-grid{
     display:grid;
-    grid-template-columns:repeat(3, 1fr);
-    gap:20px;
+    grid-template-columns:repeat(4, 1fr);
+    gap:14px;
     text-align:center;
-    font-size:11px;
+    font-size:10.5px;
 }
 .popb-sign-cell .icon{ color:#444; margin-bottom:6px; }
 .popb-sign-cell .label{ font-weight:700; color:#111; margin-bottom:46px; }
@@ -7933,7 +7933,13 @@ window.cetakPermintaan = function(id){
         </div>
         <div class="popb-sign-cell">
             <div class="icon">${POPB_ICON_USER}</div>
-            <div class="label">Diketahui / Disetujui</div>
+            <div class="label">Diketahui</div>
+            <div class="sign-line"></div>
+            <div class="name">Kabag Mekanik / Elektrik</div>
+        </div>
+        <div class="popb-sign-cell">
+            <div class="icon">${POPB_ICON_USER}</div>
+            <div class="label">Disetujui</div>
             <div class="sign-line"></div>
             <div class="name">Pimpinan</div>
         </div>

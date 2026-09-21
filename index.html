@@ -1562,7 +1562,7 @@ tr.audit-nilai-bkb-subtotal td{
 <div class="center-wrap" id="login-screen">
     <div class="login-card">
         <div class="login-mascot">
-            <img src="assets/mascot-laptop.webp" alt="Maskot Centra">
+            <img src="mascot-laptop.webp" alt="Maskot Centra">
         </div>
         <div class="brand-icon">
             <svg viewBox="0 0 100 100" width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">
@@ -1654,7 +1654,7 @@ tr.audit-nilai-bkb-subtotal td{
             <!-- ============================================= -->
             <div class="page" id="page-gudang-dashboard">
                 <div class="dash-wallpaper">
-                    <img class="dash-wallpaper-mascot" src="assets/mascot-wave.webp" alt="Maskot Centra">
+                    <img class="dash-wallpaper-mascot" src="mascot-wave.webp" alt="Maskot Centra">
                     <div class="dash-wallpaper-greeting" id="dash-gudang-greeting">Selamat datang</div>
                     <div class="dash-wallpaper-date" id="dash-gudang-tanggal"></div>
                 </div>
@@ -2837,7 +2837,7 @@ tr.audit-nilai-bkb-subtotal td{
             <!-- ============================================= -->
             <div class="page" id="page-purchasing-dashboard">
                 <div class="dash-wallpaper">
-                    <img class="dash-wallpaper-mascot" src="assets/mascot-wave.webp" alt="Maskot Centra">
+                    <img class="dash-wallpaper-mascot" src="mascot-wave.webp" alt="Maskot Centra">
                     <div class="dash-wallpaper-greeting" id="dash-pur-greeting">Selamat datang</div>
                     <div class="dash-wallpaper-date" id="dash-pur-tanggal"></div>
                 </div>
@@ -4294,17 +4294,36 @@ async function sendPasswordResetEmail(_auth, email){
 }
 
 function onAuthStateChanged(_auth, callback){
+    // PENTING: Supabase memicu onAuthStateChange bukan cuma pas login/logout
+    // sungguhan, tapi juga tiap kali token di-refresh -- termasuk otomatis
+    // saat tab browser kembali aktif (pindah tab lalu balik lagi). Firebase
+    // Auth TIDAK begitu (callback lama cuma jalan pas benar-benar login/logout),
+    // jadi kalau callback aplikasi dipanggil ulang tiap event itu, halaman
+    // ke-reset balik ke Dashboard setiap kali user pindah tab. Makanya di sini
+    // callback aplikasi HANYA dipanggil kalau identitas user beneran berubah
+    // (belum login -> login, login -> logout, atau ganti akun), bukan tiap
+    // ada event apa pun dari Supabase.
+    let uidTerakhir = undefined; // undefined = belum pernah dicek sama sekali
+
+    function prosesSesi(session){
+        const u = session && session.user;
+        const userBaru = u ? { uid: u.id, email: u.email } : null;
+        const uidBaru = userBaru ? userBaru.uid : null;
+
+        if(uidBaru === uidTerakhir) return; // uid sama -> event refresh biasa, abaikan
+
+        uidTerakhir = uidBaru;
+        authState.currentUser = userBaru;
+        callback(authState.currentUser);
+    }
+
     // Panggil sekali di awal dengan sesi yang sedang berjalan (kalau ada)
     sb.auth.getSession().then(({ data }) => {
-        const u = data.session && data.session.user;
-        authState.currentUser = u ? { uid: u.id, email: u.email } : null;
-        callback(authState.currentUser);
+        prosesSesi(data.session);
     });
 
     const { data: listener } = sb.auth.onAuthStateChange((_event, session) => {
-        const u = session && session.user;
-        authState.currentUser = u ? { uid: u.id, email: u.email } : null;
-        callback(authState.currentUser);
+        prosesSesi(session);
     });
 
     return () => listener.subscription.unsubscribe();

@@ -2615,7 +2615,7 @@ tr.audit-nilai-bkb-subtotal td{
             </div>
 
             <!-- ============================================= -->
-            <!-- GUDANG: IMPORT MASTER BARANG -->
+            <!-- AUDIT: IMPORT MASTER BARANG -->
             <!-- ============================================= -->
             <div class="page" id="page-import-master-barang">
 
@@ -2667,7 +2667,7 @@ tr.audit-nilai-bkb-subtotal td{
             </div>
 
             <!-- ============================================= -->
-            <!-- GUDANG: IMPORT MASTER KARYAWAN -->
+            <!-- AUDIT: IMPORT MASTER KARYAWAN -->
             <!-- ============================================= -->
             <div class="page" id="page-import-master-karyawan">
 
@@ -4657,8 +4657,6 @@ const NAV_ITEMS = {
             { id:"gudang-so-list", label:"📃 List Stock Opname" }
         ]},
         { group:"⚙️ Setting", items:[
-            { id:"import-master-barang", label:"📥 Import Master Barang" },
-            { id:"import-master-karyawan", label:"📥 Import Master Karyawan" },
             { id:"gudang-request-barang", label:"➕ Request Nama Barang" }
         ]}
     ],
@@ -4702,6 +4700,10 @@ const NAV_ITEMS = {
             { id:"audit-so-approval", label:"✅ Approval Stock Opname" },
             { id:"audit-request-barang", label:"🏷️ Approval Request Barang" },
             { id:"audit-sesi-aktif", label:"🟢 Siapa Sedang Login" }
+        ]},
+        { group:"⚙️ Setting", items:[
+            { id:"import-master-barang", label:"📥 Import Master Barang" },
+            { id:"import-master-karyawan", label:"📥 Import Master Karyawan" }
         ]}
     ]
 };

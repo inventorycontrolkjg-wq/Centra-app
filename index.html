@@ -3398,6 +3398,14 @@ tr.audit-nilai-bkb-subtotal td{
             <!-- ============================================= -->
             <!-- PIMPINAN -->
             <!-- ============================================= -->
+            <div class="page" id="page-pimpinan-dashboard">
+                <div class="dash-wallpaper">
+                    <img class="dash-wallpaper-mascot" src="mascot-wave.webp" alt="Maskot Centra">
+                    <div class="dash-wallpaper-greeting" id="dash-pim-greeting">Selamat datang</div>
+                    <div class="dash-wallpaper-date" id="dash-pim-tanggal"></div>
+                </div>
+            </div>
+
             <div class="page" id="page-pimpinan-review">
                 <div class="page-header">
                     <h2>✅ Review &amp; Approval</h2>
@@ -3420,6 +3428,56 @@ tr.audit-nilai-bkb-subtotal td{
                         <tbody id="pim-list-body"></tbody>
                     </table>
                     <div class="empty-state" id="pim-list-empty" style="display:none;">Belum ada permintaan dengan penawaran dari Purchasing.</div>
+                </div>
+            </div>
+
+            <div class="page page-wide" id="page-pimpinan-approved-pimpinan">
+                <div class="page-header">
+                    <h2>✅ List Disetujui oleh Pimpinan</h2>
+                    <p>Permintaan yang sudah diputuskan (approve) lewat jalur review Pimpinan</p>
+                </div>
+                <div class="panel">
+                    <table class="tbl">
+                        <thead>
+                            <tr>
+                                <th>Tanggal</th>
+                                <th>No PR</th>
+                                <th>Detail Barang</th>
+                                <th>Penawaran</th>
+                                <th>Catatan Pimpinan</th>
+                                <th>Diputuskan Oleh</th>
+                                <th>Tanggal Keputusan</th>
+                                <th>File Referensi</th>
+                            </tr>
+                        </thead>
+                        <tbody id="pim-approved-pim-body"></tbody>
+                    </table>
+                    <div class="empty-state" id="pim-approved-pim-empty" style="display:none;">Belum ada permintaan yang disetujui Pimpinan.</div>
+                </div>
+            </div>
+
+            <div class="page page-wide" id="page-pimpinan-approved-purchasing">
+                <div class="page-header">
+                    <h2>✅ List Disetujui oleh Purchasing</h2>
+                    <p>Permintaan barang receh yang di-approve sendiri oleh Purchasing (tidak lewat review Pimpinan)</p>
+                </div>
+                <div class="panel">
+                    <table class="tbl">
+                        <thead>
+                            <tr>
+                                <th>Tanggal</th>
+                                <th>No PR</th>
+                                <th>Detail Barang</th>
+                                <th>Penawaran</th>
+                                <th>Catatan</th>
+                                <th>Diputuskan Oleh</th>
+                                <th>Tanggal Keputusan</th>
+                                <th>File Referensi</th>
+                            </tr>
+                        </thead>
+                        <tbody id="pim-approved-pur-body"></tbody>
+                    </table>
+                    <div class="empty-state" id="pim-approved-pur-empty" style="display:none;">Belum ada permintaan yang disetujui sendiri oleh Purchasing.</div>
                 </div>
             </div>
 
@@ -4683,7 +4741,15 @@ const NAV_ITEMS = {
         ]}
     ],
     pimpinan: [
-        { id:"pimpinan-review", label:"✅ Review & Approval" }
+        { id:"pimpinan-dashboard", label:"📊 Dashboard" },
+        { id:"pimpinan-review", label:"✅ Review & Approval" },
+        { group:"📋 List Sudah Approve", items:[
+            { id:"pimpinan-approved-pimpinan", label:"✅ Disetujui oleh Pimpinan" },
+            { id:"pimpinan-approved-purchasing", label:"✅ Disetujui oleh Purchasing" }
+        ]},
+        { group:"📊 Daily", items:[
+            { id:"history", label:"🕒 History Keluar/Masuk" }
+        ]}
     ],
     finance: [
         { id:"finance-dashboard", label:"💳 Dashboard" }
@@ -4779,6 +4845,7 @@ function tutupSemuaSambunganLive(){
     if(unsubListPO) unsubListPO();
     if(unsubListBMB) unsubListBMB();
     if(unsubPimList) unsubPimList();
+    if(unsubPimApproved) unsubPimApproved();
     if(unsubPengeluaran) unsubPengeluaran();
     if(unsubListKBB) unsubListKBB();
     if(unsubPenerimaan) unsubPenerimaan();
@@ -4811,6 +4878,7 @@ function tutupSemuaSambunganLive(){
     unsubListPO = null;
     unsubListBMB = null;
     unsubPimList = null;
+    unsubPimApproved = null;
     unsubPengeluaran = null;
     unsubListKBB = null;
     unsubPenerimaan = null;
@@ -4939,8 +5007,17 @@ window.showPage = function(id){
         pantauMasterSupplier();
         resetImportMasterSupplier();
     }
+    if(id === "pimpinan-dashboard"){
+        muatDashboardPimpinan();
+    }
     if(id === "pimpinan-review"){
         pantauPimpinanReview();
+    }
+    if(id === "pimpinan-approved-pimpinan"){
+        pantauPimpinanApproved("pimpinan");
+    }
+    if(id === "pimpinan-approved-purchasing"){
+        pantauPimpinanApproved("purchasing");
     }
     if(id === "audit-permintaan"){
         pantauMasterBarang();
@@ -10592,6 +10669,7 @@ window.cetakBMB = function(id){
 // =========================================================
 let unsubPimList = null;
 let pimListMap = {};
+let unsubPimApproved = null;
 
 function pantauPimpinanReview(){
 
@@ -10681,6 +10759,72 @@ window.putuskanPimpinan = function(id, keputusan){
     }
     setDoc(doc(db, "permintaan_barang", id), payload, { merge: true })
         .catch(e => alert("Gagal menyimpan keputusan: " + e.message));
+}
+
+// -------- List permintaan yang sudah di-approve, dipecah berdasarkan siapa
+// yang meng-approve-nya: "pimpinan" (lewat halaman Review & Approval) atau
+// "purchasing" (self-approve barang receh, tidak lewat review Pimpinan). --------
+function pantauPimpinanApproved(jenis){
+
+    if(unsubPimApproved) unsubPimApproved();
+
+    const idBody = jenis === "pimpinan" ? "pim-approved-pim-body" : "pim-approved-pur-body";
+    const idEmpty = jenis === "pimpinan" ? "pim-approved-pim-empty" : "pim-approved-pur-empty";
+
+    const BATAS_AMAN_APPROVED = 500;
+    const q = query(collection(db, "permintaan_barang"), orderBy("created_at", "desc"), limit(BATAS_AMAN_APPROVED));
+
+    unsubPimApproved = onSnapshot(q, (snapshot) => {
+
+        const tbody = document.getElementById(idBody);
+        const emptyEl = document.getElementById(idEmpty);
+        if(!tbody || !emptyEl) return; // halaman yang lain lagi aktif, snapshot ini sudah tidak relevan
+
+        const rows = [];
+
+        [...snapshot.docs].reverse().forEach(docSnap => {
+            const d = docSnap.data();
+            if((d.status || "") !== "approve") return; // cuma yang sudah disetujui
+            if((d.approvement_oleh || "") !== jenis) return;
+            rows.push({ id: docSnap.id, d });
+        });
+
+        if(rows.length === 0){
+            tbody.innerHTML = "";
+            emptyEl.style.display = "block";
+            return;
+        }
+        emptyEl.style.display = "none";
+
+        tbody.innerHTML = rows.map(({ id, d }, i) => {
+            const grpClass = i % 2 === 0 ? "tbl-grp-a" : "tbl-grp-b";
+            const tgl = d.created_at ? d.created_at.toDate().toLocaleDateString("id-ID", { day:"numeric", month:"short", year:"numeric" }) : "-";
+            const daftarPenawaran = d.penawaran_list || [];
+
+            const penawaranHtml = daftarPenawaran.map((p, i) => `
+                <div style="margin-bottom:4px; padding-bottom:4px; ${i < daftarPenawaran.length - 1 ? 'border-bottom:1px dashed #e2e2e2;' : ''}">
+                    <b>P${i + 1}:</b> ${p.vendor || "-"} — Rp ${(p.harga || 0).toLocaleString("id-ID")}
+                    ${p.estimasi_pengiriman ? ` <span style="color:#8d8d8d;">(${p.estimasi_pengiriman})</span>` : ""}
+                    ${p.lampiran_url ? ` — <a href="${p.lampiran_url}" target="_blank" rel="noopener">📎 Lihat lampiran</a>` : ""}
+                </div>
+            `).join("");
+
+            const diputuskanPada = d.diputuskan_pada ? d.diputuskan_pada.toDate().toLocaleString("id-ID", { day:"numeric", month:"short", year:"numeric", hour:"2-digit", minute:"2-digit" }) : "-";
+
+            return `
+<tr class="${grpClass}">
+    <td>${tgl}</td>
+    <td>${d.no_pr || "-"}</td>
+    <td>${renderDetailBarangHtml(d)}</td>
+    <td>${penawaranHtml || "-"}</td>
+    <td>${d.catatan_pimpinan || "-"}</td>
+    <td>${d.diputuskan_oleh || "-"}</td>
+    <td>${diputuskanPada}</td>
+    <td>${d.file_referensi_url ? `<a href="${d.file_referensi_url}" target="_blank" rel="noopener">📎 Lihat File</a>` : "-"}</td>
+</tr>`;
+        }).join("");
+
+    }, err => console.error("Gagal memuat List Disetujui (" + jenis + "):", err));
 }
 
 // -------- List Pengeluaran (semua BKB, bukan cuma milik sendiri) --------
@@ -12372,6 +12516,10 @@ function muatDashboardGudang(){
 
 function muatDashboardPurchasing(){
     isiSapaanDashboard("dash-pur-greeting", "dash-pur-tanggal");
+}
+
+function muatDashboardPimpinan(){
+    isiSapaanDashboard("dash-pim-greeting", "dash-pim-tanggal");
 }
 
 // =========================================================

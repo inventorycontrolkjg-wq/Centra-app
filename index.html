@@ -4386,24 +4386,52 @@ function onSnapshot(refOrQuery, onNext, onError){
 // pakai incrementCounter() yang membungkus RPC Postgres (benar-benar atomik).
 // Untuk operasi kompleks lain (BKB: penomoran + validasi stok banyak item),
 // idealnya dibuatkan RPC function khusus di Postgres -- ini best-effort saja.
+//
+// PENTING (bug yang pernah terjadi & sudah diperbaiki): tx.set()/tx.update()
+// di sini DULU langsung memanggil setDoc()/updateDoc() tanpa "await" --
+// kodenya sendiri (dipanggil dari dalam updateFunction) juga tidak pernah
+// nge-"await" tx.set()/tx.update() (memang tidak perlu, meniru API Firestore
+// asli yang synchronous untuk .set()/.update() di dalam transaksi). Akibatnya
+// SEMUA tulisan di dalam satu "transaksi" jalan paralel sendiri-sendiri,
+// urutannya tidak terjamin, dan kalau salah satu GAGAL (misal kena RLS atau
+// constraint), error-nya jadi "unhandled promise rejection" yang tidak
+// pernah sampai ke try/catch pemanggil -- pengguna melihat pesan sukses
+// padahal sebagian tulisan gagal diam-diam (contoh nyata: submit Input
+// Penerimaan sempat menandai Surat Jalan "diterima" di dokumen PR duluan,
+// padahal dokumen penerimaan_barang-nya sendiri gagal tersimpan).
+//
+// Perbaikannya: tx.set()/tx.update()/tx.delete() di sini SEKARANG cuma
+// menampung rencana tulisan (seperti writeBatch di bawah), baru benar-benar
+// dieksekusi SATU PER SATU secara berurutan (menunggu satu selesai sebelum
+// lanjut ke berikutnya) setelah updateFunction() selesai jalan. Ini bukan
+// atomicity sungguhan ala Postgres (tulisan yang sudah kadung jalan sebelum
+// ada yang gagal TETAP tersimpan, tidak otomatis di-rollback), tapi
+// setidaknya: (1) urutan tulisan selalu sesuai urutan kode-nya, dan (2)
+// kalau ada yang gagal, errornya SELALU sampai ke try/catch pemanggil --
+// tidak ada lagi kegagalan yang hilang tanpa jejak.
 // ---------------------------------------------------------
 
 async function runTransaction(_db, updateFunction){
+    const rencanaTulis = [];
     const tx = {
         async get(docRef){
             return await getDoc(docRef);
         },
         set(docRef, data, options){
-            return setDoc(docRef, data, options);
+            rencanaTulis.push(() => setDoc(docRef, data, options));
         },
         update(docRef, data){
-            return updateDoc(docRef, data);
+            rencanaTulis.push(() => updateDoc(docRef, data));
         },
         delete(docRef){
-            return deleteDoc(docRef);
+            rencanaTulis.push(() => deleteDoc(docRef));
         }
     };
-    return await updateFunction(tx);
+    const hasil = await updateFunction(tx);
+    for(const tulis of rencanaTulis){
+        await tulis();
+    }
+    return hasil;
 }
 
 function writeBatch(_db){

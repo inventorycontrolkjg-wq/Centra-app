@@ -2653,7 +2653,6 @@ tr.audit-nilai-bkb-subtotal td{
                                     <th>Nama Barang</th>
                                     <th style="width:120px;">Kategori</th>
                                     <th style="width:80px;">Satuan</th>
-                                    <th style="width:100px;">Stok Sistem</th>
                                     <th style="width:120px;">Stok Fisik</th>
                                     <th style="width:90px;">Selisih</th>
                                     <th style="width:60px;">Aksi</th>
@@ -12277,7 +12276,6 @@ function renderTabelItemSO(){
     <td style="white-space:normal;">${it.nama}${it.metode === "manual" ? ` <span style="color:#8d8d8d; font-size:11px;">(manual)</span>` : ""}</td>
     <td>${it.kategori || "-"}</td>
     <td>${it.satuan || "-"}</td>
-    <td class="num">${it.stok_sistem}</td>
     <td class="num"><input type="number" min="0" class="so-input-fisik" value="${it.stok_fisik ?? ""}" placeholder="-"></td>
     <td class="num ${selisihClass}">${selisihTxt}</td>
     <td><button class="btn-ic-edit" type="button" onclick="simpanKoreksiManualSO(${it.idx}, this)">💾</button></td>
@@ -12345,6 +12343,13 @@ window.prosesScanSO = async function(){
 
     try{
         await simpanNilaiFisikSO(idx, jumlahBaru);
+        // OPTIMISTIC UPDATE: langsung update data lokal + render ulang, tidak
+        // nunggu round-trip realtime (bisa kerasa "telat"/tidak langsung
+        // pindah tab pas lagi scan cepat berturut-turut). Update realtime yang
+        // datang belakangan tetap jalan seperti biasa, cuma jadi konfirmasi
+        // ulang -- tidak masalah kalau nimpa data yang sama persis.
+        item.stok_fisik = jumlahBaru;
+        renderScanAreaSO();
         statusEl.textContent = `✓ ${item.nama} — tally: ${jumlahBaru}`;
         statusEl.className = "bkb-barcode-status ok";
     } catch(e){
@@ -12364,8 +12369,13 @@ window.simpanKoreksiManualSO = async function(idx, btnEl){
 
     try{
         await simpanNilaiFisikSO(idx, nilai);
-        btnEl.textContent = "✔";
-        setTimeout(() => { btnEl.textContent = labelAsli; btnEl.disabled = false; }, 1200);
+        // OPTIMISTIC UPDATE, sama seperti prosesScanSO -- baris langsung
+        // pindah ke tab yang sesuai ("Sudah"/"Belum Dihitung") begitu
+        // tersimpan, tidak nunggu round-trip realtime.
+        if(soSesiTerpilihData && soSesiTerpilihData.items[idx]){
+            soSesiTerpilihData.items[idx].stok_fisik = nilai;
+        }
+        renderScanAreaSO();
     } catch(e){
         alert("Gagal menyimpan: " + e.message);
         btnEl.textContent = labelAsli;

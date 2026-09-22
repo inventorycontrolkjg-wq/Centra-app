@@ -12261,14 +12261,45 @@ function renderScanAreaSO(){
 
     document.getElementById("so-info-no").textContent = d.no_so;
     document.getElementById("so-info-cakupan").textContent = d.cakupan_label || "Semua Kategori";
+    perbaruiProgressSO();
+    renderTabelItemSO();
+}
+
+// Update angka "x / y barang sudah dihitung" + progress bar saja, TANPA
+// nulis ulang tbody -- dipakai tiap kali satu baris disimpan supaya baris
+// lain (yang mungkin lagi diketik/direvisi user tapi belum diklik Save)
+// tidak ikut ke-render ulang/kereset.
+function perbaruiProgressSO(){
+    const d = soSesiTerpilihData;
+    if(!d) return;
     const total = d.items.length;
     const sudah = d.items.filter(it => it.stok_fisik !== null).length;
-    document.getElementById("so-info-progress").textContent = `${sudah} / ${total} barang sudah dihitung`;
-
+    const progEl = document.getElementById("so-info-progress");
+    if(progEl) progEl.textContent = `${sudah} / ${total} barang sudah dihitung`;
     const bar = document.getElementById("so-progress-bar-fill");
     if(bar) bar.style.width = total ? `${Math.round(sudah / total * 100)}%` : "0%";
+}
 
-    renderTabelItemSO();
+// Selisih (dan Stok Sistem) SENGAJA tidak ditampilkan di tabel ini -- gudang
+// cuma input hasil hitung fisik apa adanya, tanpa kelihatan acuan sistemnya,
+// biar hitungannya murni. Selisih tetap kelihatan di halaman Audit
+// (Detail/List Stock Opname) buat keperluan approval.
+//
+// Status simpan per-baris: dianggap "sudah ter-save" kalau stok_fisik yang
+// TERSIMPAN di database untuk baris ini tidak null. Baris ini SENGAJA dikasih
+// atribut data-idx supaya sinkronBarisSO() bisa nemuin & update SATU baris
+// ini SAJA setelah disimpan, tanpa nulis ulang baris lain di tabel yang
+// mungkin lagi diedit user tapi belum diklik Save.
+function htmlBarisSO(it, idx){
+    const sudahTersimpan = it.stok_fisik !== null;
+    return `
+<tr data-idx="${idx}">
+    <td style="white-space:normal;">${it.nama}${it.metode === "manual" ? ` <span style="color:#8d8d8d; font-size:11px;">(manual)</span>` : ""}</td>
+    <td>${it.kategori || "-"}</td>
+    <td>${it.satuan || "-"}</td>
+    <td class="num so-fisik-cell ${sudahTersimpan ? "so-fisik-cell-saved" : "so-fisik-cell-belum"}"><input type="number" min="0" class="so-input-fisik" value="${it.stok_fisik ?? ""}" placeholder="-" oninput="handleInputFisikSOBerubah(this)"></td>
+    <td><button class="btn-so-save ${sudahTersimpan ? "saved" : ""}" type="button" onclick="simpanKoreksiManualSO(${idx}, this)">${sudahTersimpan ? "Succes ter-save" : "Save"}</button></td>
+</tr>`;
 }
 
 function renderTabelItemSO(){
@@ -12289,27 +12320,7 @@ function renderTabelItemSO(){
     }
     emptyEl.style.display = "none";
 
-    // Selisih (dan Stok Sistem) SENGAJA tidak ditampilkan di tabel ini --
-    // gudang cuma input hasil hitung fisik apa adanya, tanpa kelihatan
-    // acuan sistemnya, biar hitungannya murni. Selisih tetap kelihatan
-    // di halaman Audit (Detail/List Stock Opname) buat keperluan approval.
-    // Status simpan per-baris: dianggap "sudah ter-save" kalau nilai di kotak
-    // input SAMA PERSIS dengan stok_fisik yang sudah tersimpan (it.stok_fisik).
-    // Baru render, keduanya selalu sama (belum diapa-apain user) -- begitu
-    // user ketik/ubah nilainya, handleInputFisikSOBerubah() di bawah yang
-    // mengubah tampilan jadi "belum ter-save" (merah muda + tombol merah)
-    // sampai diklik Save lagi.
-    tbody.innerHTML = data.map(it => {
-        const sudahTersimpan = it.stok_fisik !== null;
-        return `
-<tr>
-    <td style="white-space:normal;">${it.nama}${it.metode === "manual" ? ` <span style="color:#8d8d8d; font-size:11px;">(manual)</span>` : ""}</td>
-    <td>${it.kategori || "-"}</td>
-    <td>${it.satuan || "-"}</td>
-    <td class="num so-fisik-cell ${sudahTersimpan ? "so-fisik-cell-saved" : "so-fisik-cell-belum"}"><input type="number" min="0" class="so-input-fisik" value="${it.stok_fisik ?? ""}" placeholder="-" oninput="handleInputFisikSOBerubah(this)"></td>
-    <td><button class="btn-so-save ${sudahTersimpan ? "saved" : ""}" type="button" onclick="simpanKoreksiManualSO(${it.idx}, this)">${sudahTersimpan ? "Succes ter-save" : "Save"}</button></td>
-</tr>`;
-    }).join("");
+    tbody.innerHTML = data.map(it => htmlBarisSO(it, it.idx)).join("");
 }
 
 window.gantiTabSO = function(tab){
@@ -12332,6 +12343,48 @@ async function simpanNilaiFisikSO(idx, nilaiBaru){
         items[idx].stok_fisik = nilaiBaru;
         tx.set(ref, { items }, { merge: true });
     });
+}
+
+// Sinkronkan SATU baris (barang idx) di tabel so-items-body dengan data
+// terbaru di soSesiTerpilihData.items[idx], TANPA nulis ulang baris lain.
+// Dipanggil tiap kali satu barang berhasil disimpan (scan tally maupun
+// koreksi manual) -- baris lain yang mungkin lagi diketik/direvisi user
+// tapi belum diklik Save jadi tidak ikut ke-reset ke status "sudah ter-save".
+function sinkronBarisSO(idx){
+    const d = soSesiTerpilihData;
+    if(!d) return;
+    const it = d.items[idx];
+    if(!it) return;
+    const tbody = document.getElementById("so-items-body");
+    if(!tbody) return;
+
+    const rowLama = tbody.querySelector(`tr[data-idx="${idx}"]`);
+    const cocokTabSekarang = soTabAktif === "sudah" ? it.stok_fisik !== null : it.stok_fisik === null;
+
+    if(!cocokTabSekarang){
+        // Barang ini sekarang harusnya ada di tab SEBELAH -- cukup hilangkan
+        // dari tampilan tab yang lagi aktif. Baris lain tidak disentuh.
+        if(rowLama) rowLama.remove();
+    } else if(rowLama){
+        // Masih di tab yang sama -- update baris ini di tempat saja.
+        rowLama.outerHTML = htmlBarisSO(it, idx);
+    } else {
+        // Baru pertama kali muncul di tab yang lagi aktif (misal barang baru
+        // discan pertama kali sementara lagi buka tab "Sudah Dihitung") --
+        // tambahkan baris baru di akhir tabel, baris lain tetap utuh.
+        tbody.insertAdjacentHTML("beforeend", htmlBarisSO(it, idx));
+    }
+
+    const emptyEl = document.getElementById("so-items-empty");
+    if(emptyEl){
+        const masihAdaBaris = tbody.children.length > 0;
+        emptyEl.style.display = masihAdaBaris ? "none" : "block";
+        if(!masihAdaBaris){
+            emptyEl.textContent = soTabAktif === "sudah" ? "Belum ada barang yang dihitung." : "Semua barang di cakupan ini sudah dihitung.";
+        }
+    }
+
+    perbaruiProgressSO();
 }
 
 window.handleScanSOKeydown = function(ev){
@@ -12372,13 +12425,13 @@ window.prosesScanSO = async function(){
 
     try{
         await simpanNilaiFisikSO(idx, jumlahBaru);
-        // OPTIMISTIC UPDATE: langsung update data lokal + render ulang, tidak
-        // nunggu round-trip realtime (bisa kerasa "telat"/tidak langsung
-        // pindah tab pas lagi scan cepat berturut-turut). Update realtime yang
-        // datang belakangan tetap jalan seperti biasa, cuma jadi konfirmasi
-        // ulang -- tidak masalah kalau nimpa data yang sama persis.
+        // OPTIMISTIC UPDATE: langsung update data lokal + sinkronkan SATU
+        // baris ini saja (sinkronBarisSO), tidak nunggu round-trip realtime
+        // dan tidak nulis ulang baris lain yang mungkin lagi direvisi manual
+        // tapi belum di-save. Update realtime yang datang belakangan tetap
+        // jalan seperti biasa, cuma jadi konfirmasi ulang.
         item.stok_fisik = jumlahBaru;
-        renderScanAreaSO();
+        sinkronBarisSO(idx);
         statusEl.textContent = `✓ ${item.nama} — tally: ${jumlahBaru}`;
         statusEl.className = "bkb-barcode-status ok";
     } catch(e){
@@ -12416,13 +12469,13 @@ window.simpanKoreksiManualSO = async function(idx, btnEl){
 
     try{
         await simpanNilaiFisikSO(idx, nilai);
-        // OPTIMISTIC UPDATE, sama seperti prosesScanSO -- baris langsung
-        // pindah ke tab yang sesuai ("Sudah"/"Belum Dihitung") begitu
-        // tersimpan, tidak nunggu round-trip realtime.
+        // OPTIMISTIC UPDATE, sama seperti prosesScanSO -- yang di-update cuma
+        // BARIS INI SENDIRI (sinkronBarisSO), baris lain yang lagi
+        // diketik/direvisi user tapi belum diklik Save TIDAK ikut tersentuh.
         if(soSesiTerpilihData && soSesiTerpilihData.items[idx]){
             soSesiTerpilihData.items[idx].stok_fisik = nilai;
         }
-        renderScanAreaSO();
+        sinkronBarisSO(idx);
     } catch(e){
         alert("Gagal menyimpan: " + e.message);
         btnEl.textContent = labelAsli;

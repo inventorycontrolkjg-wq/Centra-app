@@ -2946,6 +2946,7 @@ tr.audit-nilai-bkb-subtotal td{
                                 <th>Nama Barang</th>
                                 <th>Kategori</th>
                                 <th>Satuan</th>
+                                <th>Barcode</th>
                                 <th>Diminta Oleh</th>
                                 <th>Status</th>
                                 <th>Catatan Audit</th>
@@ -5380,7 +5381,7 @@ function pantauMasterBarang(){
                     satuan_default: d.satuan_default || "",
                     stok: (d.stok !== undefined ? d.stok : null)
                 };
-                catatPrefixBarcodeRB(d.barcode);
+                catatPrefixBarcodeRB(d.barcode, masterBarangPrefixMaxNum);
             }
             optionsHtml += `<option value="${d.nama}"></option>`;
         });
@@ -6712,26 +6713,43 @@ const KATEGORI_PREFIX_BARCODE_RB = {
     "ASET": "AST"
 };
 
+// Nomor urut terbesar per prefix yang lagi "dipesan" oleh request_barang
+// yang BELUM ditolak (status menunggu ATAU disetujui) -- diisi terus-menerus
+// oleh pantauRequestBarangGudang() tiap ada perubahan di collection
+// request_barang. Dipisah dari masterBarangPrefixMaxNum (yang cuma
+// mencerminkan barcode yang SUDAH resmi di Master Barang) karena
+// masterBarangPrefixMaxNum itu di-reset ULANG dari nol tiap ada perubahan
+// APAPUN di tabel master_barang (yang di gudang aktif kejadiannya sering
+// banget) -- kalau nomor urut request yang masih pending cuma dicatat di
+// situ, gampang ke-timpa/hilang sebelum request-nya sendiri resmi disetujui
+// jadi Master Barang. Makanya disimpan terpisah di sini, dan pas nyaranin
+// nomor berikutnya, dua-duanya diperbandingkan (ambil yang terbesar).
+let requestBarangPrefixMaxNum = {};
+
 // Cek satu barcode: kalau formatnya cocok pola "PREFIX.NNN", catat nomor
-// urutnya di masterBarangPrefixMaxNum kalau lebih besar dari yang tercatat
-// sebelumnya -- dipanggil tiap barcode Master Barang dimuat/berubah
-// (pantauMasterBarang) supaya saran nomor urut berikutnya selalu akurat.
-function catatPrefixBarcodeRB(barcode){
+// urutnya di objek target (masterBarangPrefixMaxNum ATAU
+// requestBarangPrefixMaxNum) kalau lebih besar dari yang tercatat
+// sebelumnya.
+function catatPrefixBarcodeRB(barcode, target){
     if(!barcode) return;
     const cocok = /^([A-Za-z]+)\.(\d+)$/.exec(barcode.trim());
     if(!cocok) return;
     const prefix = cocok[1].toUpperCase();
     const nomor = parseInt(cocok[2], 10);
-    if(!(prefix in masterBarangPrefixMaxNum) || nomor > masterBarangPrefixMaxNum[prefix]){
-        masterBarangPrefixMaxNum[prefix] = nomor;
+    if(!(prefix in target) || nomor > target[prefix]){
+        target[prefix] = nomor;
     }
 }
 
 // Dipanggil tiap ganti pilihan Kategori di form Request Nama Barang --
 // otomatis saranin barcode "PREFIX.NNN" (nomor urut berikutnya buat
-// kategori itu). SENGAJA cuma saran, bukan final: kalau kotak Barcode udah
-// pernah diketik manual sama user (misal barangnya udah punya barcode asli
-// dari kemasan pabrik), saran ini TIDAK menimpa nilai yang sudah diketik.
+// kategori itu, dihitung dari yang TERBESAR antara barcode yang sudah resmi
+// di Master Barang DAN barcode di request_barang yang masih pending/sudah
+// disetujui -- supaya request beruntun di kategori yang sama tidak
+// nyaranin nomor yang sama persis). SENGAJA cuma saran, bukan final: kalau
+// kotak Barcode udah pernah diketik manual sama user (misal barangnya udah
+// punya barcode asli dari kemasan pabrik), saran ini TIDAK menimpa nilai
+// yang sudah diketik.
 window.handleKategoriRBBerubah = function(){
     const kategori = document.getElementById("rb-kategori").value;
     const prefix = KATEGORI_PREFIX_BARCODE_RB[kategori];
@@ -6741,7 +6759,8 @@ window.handleKategoriRBBerubah = function(){
     const bolehAutoIsi = inputBarcode.value.trim() === "" || inputBarcode.dataset.auto === "1";
     if(!bolehAutoIsi) return;
 
-    const nomorBerikutnya = (masterBarangPrefixMaxNum[prefix] || 0) + 1;
+    const nomorTerbesar = Math.max(masterBarangPrefixMaxNum[prefix] || 0, requestBarangPrefixMaxNum[prefix] || 0);
+    const nomorBerikutnya = nomorTerbesar + 1;
     inputBarcode.value = `${prefix}.${String(nomorBerikutnya).padStart(3, "0")}`;
     inputBarcode.dataset.auto = "1";
 }
@@ -6808,11 +6827,12 @@ window.ajukanRequestBarang = async function(){
         msgEl.className = "form-msg ok";
         msgEl.style.display = "block";
 
-        // Supaya request berikutnya (di sesi yang sama, kategori yang sama)
-        // gak nyaranin nomor urut yang sama persis -- catat nomor barcode
-        // yang barusan dipakai, walaupun barangnya sendiri belum resmi masuk
-        // Master Barang (masih nunggu approval Audit).
-        catatPrefixBarcodeRB(barcode);
+        // Supaya request BERIKUTNYA (kategori yang sama) langsung nyaranin
+        // nomor yang benar tanpa nunggu round-trip realtime dulu -- catat
+        // optimistically ke requestBarangPrefixMaxNum. pantauRequestBarangGudang()
+        // bakal konfirmasi ulang begitu event realtime-nya datang (idempoten,
+        // tidak masalah kalau nimpa dengan nilai yang sama).
+        catatPrefixBarcodeRB(barcode, requestBarangPrefixMaxNum);
 
         document.getElementById("rb-nama").value = "";
         document.getElementById("rb-kategori").value = "";
@@ -6850,6 +6870,18 @@ function pantauRequestBarangGudang(){
         const emptyEl = document.getElementById("rb-riwayat-empty");
         if(!tbody) return;
 
+        // Hitung ulang dari NOL tiap snapshot datang -- request yang "ditolak"
+        // sengaja tidak dihitung (nomornya bebas dipakai ulang), tapi
+        // "menunggu" dan "disetujui" tetap dihitung supaya nomor urut yang
+        // disarankan gak pernah nabrak request lain yang masih diproses.
+        requestBarangPrefixMaxNum = {};
+        snap.docs.forEach(docSnap => {
+            const d = docSnap.data();
+            if(d.status !== "ditolak"){
+                catatPrefixBarcodeRB(d.barcode, requestBarangPrefixMaxNum);
+            }
+        });
+
         if(snap.empty){
             tbody.innerHTML = "";
             if(emptyEl) emptyEl.style.display = "block";
@@ -6867,6 +6899,7 @@ function pantauRequestBarangGudang(){
     <td style="white-space:normal;">${d.nama || "-"}</td>
     <td>${d.kategori || "-"}</td>
     <td>${d.satuan || "-"}</td>
+    <td style="word-break:break-all;">${d.barcode || "-"}</td>
     <td>${d.diminta_oleh_nama || "-"}</td>
     <td>${labelStatusRequestBarang(d.status)}</td>
     <td style="white-space:normal;">${catatan}</td>

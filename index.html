@@ -5644,10 +5644,16 @@ function pantauInventoryControl(){
     // itulah yang bikin tab browser ngelag/"Not Responding" begitu masuk
     // ke menu Inventory Control. Di-debounce supaya beberapa perubahan
     // yang datang beruntun digabung jadi SATU render saja.
+    //
+    // Jeda debounce sengaja dibuat lebih longgar (1200ms, bukan 600ms) --
+    // halaman ini dipakai untuk PANTAU stok, bukan transaksi yang butuh
+    // update per detik, jadi lebih baik render-nya sedikit "telat" 1 detik
+    // tapi jarang, daripada sering tapi bikin tab berat waktu gudang lagi
+    // ramai transaksi.
     const renderDebounced = debounce((snap) => {
         inventoryControlData = snap.docs.map(d => ({ id: d.id, ...d.data() }));
         renderInventoryControl();
-    }, 600);
+    }, 1200);
 
     unsubInventoryControl = onSnapshot(q, (snap) => {
         renderDebounced(snap);
@@ -5825,7 +5831,20 @@ window.renderInventoryControl = function(){
         const ket = tentukanKeteranganStok(it);
         return { 2: it.kategori || "-", 3: it.satuan_default || "-", 10: ket ? ket.label : "-" };
     }));
-    window.tblTerapkanFilter("ic");
+
+    // OPTIMISASI: tbody barusan dibuat ulang dari nol lewat innerHTML, jadi
+    // SEMUA baris barunya sudah otomatis tampil (belum ada style.display
+    // yang di-set). tblTerapkanFilter() men-scan ULANG tiap <tr> + baca
+    // textContent-nya cuma buat mastiin itu -- kerjaan besar & sia-sia kalau
+    // memang tidak ada filter kolom (Kategori/Satuan/Keterangan) yang lagi
+    // aktif. Ini bagian PALING BERAT dari proses render (apalagi kalau
+    // dipicu tiap ketukan huruf di kotak cari atau tiap ada perubahan stok
+    // real-time), jadi baru dijalankan kalau memang perlu.
+    const stateIC = tblFilterState["ic"];
+    const adaFilterKolomAktif = stateIC && Object.keys(stateIC.active || {}).length > 0;
+    if(adaFilterKolomAktif){
+        window.tblTerapkanFilter("ic");
+    }
 }
 
 // Versi "tertunda" buat dipasang di kotak cari (lihat debounce di atas) --

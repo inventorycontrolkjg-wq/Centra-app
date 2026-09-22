@@ -2135,7 +2135,10 @@ tr.audit-nilai-bkb-subtotal td{
                             <div class="bkb-ttd-box">
                                 <div class="bkb-ttd-label">Tanda Tangan Petugas Gudang</div>
                                 <div class="form-group" style="margin-bottom:8px;">
-                                    <input type="text" id="bkb-petugas-gudang" list="master-karyawan-datalist-bkb" placeholder="Ketik/pilih nama petugas gudang..." onblur="cariGudangByNama()">
+                                    <div class="field-icon-wrap">
+                                        <input type="text" id="bkb-petugas-gudang" disabled>
+                                        <span class="field-icon">🔒</span>
+                                    </div>
                                     <datalist id="master-karyawan-datalist-bkb"></datalist>
                                 </div>
                                 <div id="bkb-ttd-gudang"><button class="btn-ttd" type="button" onclick="bukaTtdModal('gudang')"><span class="btn-ttd-icon">✎</span><span>Klik untuk tanda tangan</span></button></div>
@@ -6589,6 +6592,14 @@ function pantauMasterKaryawan(){
         if(dl) dl.innerHTML = optionsHtml;
         const dlBkb = document.getElementById("master-karyawan-datalist-bkb");
         if(dlBkb) dlBkb.innerHTML = optionsHtml;
+
+        // Field "Petugas Gudang" di form BKB terisi otomatis dari user yang
+        // login (lihat resetFormBkb) SEBELUM data master karyawan ini tentu
+        // sudah selesai dimuat -- jadi setiap kali snapshot ini datang, coba
+        // cocokkan ulang supaya tanda tangannya ikut terisi begitu datanya siap.
+        if(typeof window.cariGudangByNama === "function"){
+            window.cariGudangByNama();
+        }
     }, (err) => console.error("Gagal memuat master karyawan:", err));
 }
 
@@ -13811,9 +13822,14 @@ function resetFormBkb(){
     bkbRowCount = 0;
     bkbSignatureUser = null;
     bkbSignatureGudang = null;
-    document.getElementById("bkb-petugas-gudang").value = "";
+    // Petugas Gudang SEKARANG otomatis ikut user yang sedang login (gudang) --
+    // tidak lagi diketik/dipilih manual (field-nya dikunci "disabled" di HTML).
+    // Kalau namanya cocok persis dengan Master Karyawan yang sudah punya tanda
+    // tangan tersimpan, tanda tangannya ikut terisi otomatis juga.
+    document.getElementById("bkb-petugas-gudang").value = currentUserNama || "";
     document.getElementById("bkb-ttd-user").innerHTML = `<button class="btn-ttd" type="button" onclick="bukaTtdModal('user')">✎ Tanda Tangan</button>`;
     document.getElementById("bkb-ttd-gudang").innerHTML = `<button class="btn-ttd" type="button" onclick="bukaTtdModal('gudang')">✎ Tanda Tangan</button>`;
+    window.cariGudangByNama();
     window.tambahBarisBkb();
 
     const msgEl = document.getElementById("bkb-msg");

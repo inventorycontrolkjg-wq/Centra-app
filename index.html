@@ -1191,6 +1191,28 @@ tr.audit-nilai-bkb-subtotal td{
 .so-selisih-lebih{ color:#2e7d32; font-weight:700; }
 .so-selisih-kurang{ color:#c62828; font-weight:700; }
 
+/* Status simpan per-baris kolom Stok Fisik di Input Stock Opname --
+   merah muda = belum ter-save (baru diisi/direvisi, belum diklik Save),
+   hijau = sudah berhasil ter-save. Lihat renderTabelItemSO()/simpanKoreksiManualSO(). */
+.so-fisik-cell-belum{ background:#fde8ec; transition:background .2s ease; }
+.so-fisik-cell-saved{ background:#e3f7e9; transition:background .2s ease; }
+.btn-so-save{
+    background:#fde8ec;
+    border:1px solid #f3b8c4;
+    color:#c62828;
+    font-size:11.5px;
+    font-weight:700;
+    padding:6px 10px;
+    border-radius:7px;
+    cursor:pointer;
+    white-space:nowrap;
+}
+.btn-so-save.saved{
+    background:#e3f7e9;
+    border:1px solid #a8ddb8;
+    color:#2e7d32;
+}
+
 .so-badge-berlangsung{ background:#e3f2fd; color:#1565c0; }
 .so-badge-menunggu{ background:#fff8e1; color:#b26a00; }
 .so-badge-disetujui{ background:#e6f4ea; color:#2e7d32; }
@@ -2654,7 +2676,6 @@ tr.audit-nilai-bkb-subtotal td{
                                     <th style="width:120px;">Kategori</th>
                                     <th style="width:80px;">Satuan</th>
                                     <th style="width:120px;">Stok Fisik</th>
-                                    <th style="width:90px;">Selisih</th>
                                     <th style="width:60px;">Aksi</th>
                                 </tr>
                             </thead>
@@ -12267,18 +12288,25 @@ function renderTabelItemSO(){
     }
     emptyEl.style.display = "none";
 
+    // Selisih (dan Stok Sistem) SENGAJA tidak ditampilkan di tabel ini --
+    // gudang cuma input hasil hitung fisik apa adanya, tanpa kelihatan
+    // acuan sistemnya, biar hitungannya murni. Selisih tetap kelihatan
+    // di halaman Audit (Detail/List Stock Opname) buat keperluan approval.
+    // Status simpan per-baris: dianggap "sudah ter-save" kalau nilai di kotak
+    // input SAMA PERSIS dengan stok_fisik yang sudah tersimpan (it.stok_fisik).
+    // Baru render, keduanya selalu sama (belum diapa-apain user) -- begitu
+    // user ketik/ubah nilainya, handleInputFisikSOBerubah() di bawah yang
+    // mengubah tampilan jadi "belum ter-save" (merah muda + tombol merah)
+    // sampai diklik Save lagi.
     tbody.innerHTML = data.map(it => {
-        const selisih = it.stok_fisik !== null ? it.stok_fisik - it.stok_sistem : null;
-        const selisihTxt = selisih === null ? "-" : (selisih > 0 ? `+${selisih}` : String(selisih));
-        const selisihClass = selisih === null || selisih === 0 ? "" : (selisih > 0 ? "so-selisih-lebih" : "so-selisih-kurang");
+        const sudahTersimpan = it.stok_fisik !== null;
         return `
 <tr>
     <td style="white-space:normal;">${it.nama}${it.metode === "manual" ? ` <span style="color:#8d8d8d; font-size:11px;">(manual)</span>` : ""}</td>
     <td>${it.kategori || "-"}</td>
     <td>${it.satuan || "-"}</td>
-    <td class="num"><input type="number" min="0" class="so-input-fisik" value="${it.stok_fisik ?? ""}" placeholder="-"></td>
-    <td class="num ${selisihClass}">${selisihTxt}</td>
-    <td><button class="btn-ic-edit" type="button" onclick="simpanKoreksiManualSO(${it.idx}, this)">💾</button></td>
+    <td class="num so-fisik-cell ${sudahTersimpan ? "so-fisik-cell-saved" : "so-fisik-cell-belum"}"><input type="number" min="0" class="so-input-fisik" value="${it.stok_fisik ?? ""}" placeholder="-" oninput="handleInputFisikSOBerubah(this)"></td>
+    <td><button class="btn-so-save ${sudahTersimpan ? "saved" : ""}" type="button" onclick="simpanKoreksiManualSO(${it.idx}, this)">${sudahTersimpan ? "Succes ter-save" : "Save"}</button></td>
 </tr>`;
     }).join("");
 }
@@ -12355,6 +12383,24 @@ window.prosesScanSO = async function(){
     } catch(e){
         statusEl.textContent = "Gagal menyimpan hasil scan: " + e.message;
         statusEl.className = "bkb-barcode-status err";
+    }
+}
+
+// Dipanggil tiap user ketik/ubah kotak Stok Fisik -- langsung tandai baris
+// itu "belum ter-save" (merah muda + tombol Save merah) walaupun sebelumnya
+// sudah pernah ter-save, sampai user klik Save lagi buat nilai yang baru.
+window.handleInputFisikSOBerubah = function(inputEl){
+    const row = inputEl.closest("tr");
+    if(!row) return;
+    const cell = inputEl.closest("td");
+    if(cell){
+        cell.classList.remove("so-fisik-cell-saved");
+        cell.classList.add("so-fisik-cell-belum");
+    }
+    const btn = row.querySelector(".btn-so-save");
+    if(btn){
+        btn.classList.remove("saved");
+        btn.textContent = "Save";
     }
 }
 

@@ -2664,15 +2664,19 @@ tr.audit-nilai-bkb-subtotal td{
                         <button class="btn-primary" type="button" style="margin-top:12px;" onclick="kirimApprovalSO()">📨 Kirim untuk Approval</button>
                     </div>
 
-                    <div style="display:flex; gap:8px; margin-bottom:8px;">
-                        <button class="so-tab-btn active" id="so-tab-sudah" type="button" onclick="gantiTabSO('sudah')">Sudah Dihitung</button>
-                        <button class="so-tab-btn" id="so-tab-belum" type="button" onclick="gantiTabSO('belum')">Belum Dihitung</button>
+                    <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px; margin-bottom:8px;">
+                        <div style="display:flex; gap:8px;">
+                            <button class="so-tab-btn active" id="so-tab-sudah" type="button" onclick="gantiTabSO('sudah')">Sudah Dihitung</button>
+                            <button class="so-tab-btn" id="so-tab-belum" type="button" onclick="gantiTabSO('belum')">Belum Dihitung</button>
+                        </div>
+                        <button class="btn-ic-save" type="button" onclick="exportSOBelumDihitungExcel()">📊 Export Belum Dihitung ke Excel</button>
                     </div>
 
                     <div class="panel">
                         <table class="tbl" style="table-layout:fixed;">
                             <thead>
                                 <tr>
+                                    <th id="so-th-barcode" style="width:130px; display:none;">Barcode</th>
                                     <th style="width:34%;">Nama Barang</th>
                                     <th style="width:120px;">Kategori</th>
                                     <th style="width:80px;">Satuan</th>
@@ -2724,7 +2728,7 @@ tr.audit-nilai-bkb-subtotal td{
                                 <th>Nama Barang</th>
                                 <th style="width:120px;">Kategori</th>
                                 <th style="width:80px;">Satuan</th>
-                                <th style="width:100px;">Stok Sistem</th>
+                                <th id="so-detail-th-sistem" style="width:100px; display:none;">Stok Sistem</th>
                                 <th style="width:100px;">Stok Fisik</th>
                                 <th style="width:90px;">Selisih</th>
                             </tr>
@@ -12292,8 +12296,13 @@ function perbaruiProgressSO(){
 // mungkin lagi diedit user tapi belum diklik Save.
 function htmlBarisSO(it, idx){
     const sudahTersimpan = it.stok_fisik !== null;
+    // Kolom Barcode cuma ditampilkan di tab "Belum Dihitung" -- biar
+    // petugas yang lagi keliling gudang bisa cocokkan barcode fisik barang
+    // ke daftar yang masih tersisa, tanpa perlu buka Master Barang terpisah.
+    const tdBarcode = soTabAktif === "belum" ? `<td style="word-break:break-all;">${it.barcode || "-"}</td>` : "";
     return `
 <tr data-idx="${idx}">
+    ${tdBarcode}
     <td style="white-space:normal;">${it.nama}${it.metode === "manual" ? ` <span style="color:#8d8d8d; font-size:11px;">(manual)</span>` : ""}</td>
     <td>${it.kategori || "-"}</td>
     <td>${it.satuan || "-"}</td>
@@ -12307,6 +12316,9 @@ function renderTabelItemSO(){
     if(!d) return;
     const tbody = document.getElementById("so-items-body");
     const emptyEl = document.getElementById("so-items-empty");
+
+    const thBarcode = document.getElementById("so-th-barcode");
+    if(thBarcode) thBarcode.style.display = soTabAktif === "belum" ? "" : "none";
 
     const data = d.items
         .map((it, idx) => ({ ...it, idx }))
@@ -12509,6 +12521,50 @@ window.kirimApprovalSO = async function(){
     }
 }
 
+// Export daftar barang yang BELUM dihitung di sesi SO yang lagi aktif ke
+// Excel -- dipakai petugas gudang buat keliling ulang & cocokkan fisik
+// barang yang masih tersisa. Sengaja diambil langsung dari data sesi
+// (soSesiTerpilihData), bukan dari tabel yang lagi tampil di layar, jadi
+// hasilnya tetap lengkap walaupun user lagi buka tab "Sudah Dihitung".
+window.exportSOBelumDihitungExcel = function(){
+    const d = soSesiTerpilihData;
+    if(!d){
+        alert("Belum ada sesi Stock Opname yang aktif.");
+        return;
+    }
+
+    const daftarBelum = d.items
+        .map((it, idx) => ({ ...it, idx }))
+        .filter(it => it.stok_fisik === null)
+        .map(it => ({
+            "Barcode": it.barcode || "-",
+            "Nama Barang": it.nama || "-",
+            "Kategori": it.kategori || "-",
+            "Satuan": it.satuan || "-",
+            "Stok Fisik": ""
+        }));
+
+    if(daftarBelum.length === 0){
+        alert("Semua barang di sesi ini sudah dihitung -- tidak ada yang perlu diekspor.");
+        return;
+    }
+
+    const ws = XLSX.utils.json_to_sheet(daftarBelum);
+    ws["!cols"] = [
+        { wch: 22 }, // Barcode
+        { wch: 40 }, // Nama Barang
+        { wch: 16 }, // Kategori
+        { wch: 10 }, // Satuan
+        { wch: 12 }  // Stok Fisik (kosong, buat dicoret/dicatat manual di lapangan)
+    ];
+
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Belum Dihitung");
+
+    const tanggalFile = new Date().toISOString().slice(0, 10);
+    XLSX.writeFile(wb, `SO_${d.no_so}_Belum_Dihitung_${tanggalFile}.xlsx`);
+}
+
 // -------- List Stock Opname (riwayat) --------
 
 function pantauListSO(){
@@ -12578,16 +12634,25 @@ window.lihatDetailSO = function(id){
     const panel = document.getElementById("so-detail-panel");
     panel.style.display = "block";
     document.getElementById("so-detail-title").textContent = `Detail ${d.no_so} — ${d.cakupan_label || "Semua Kategori"}`;
+
+    // Stok Sistem SENGAJA cuma ditampilkan kalau sesi ini sudah "disetujui"
+    // Audit -- selama masih "berlangsung" (atau menunggu approval/ditolak),
+    // gudang tidak lihat acuan sistemnya, biar hitungan fisiknya murni.
+    const tampilkanStokSistem = d.status === "disetujui";
+    const thSistem = document.getElementById("so-detail-th-sistem");
+    if(thSistem) thSistem.style.display = tampilkanStokSistem ? "" : "none";
+
     document.getElementById("so-detail-body").innerHTML = (d.items || []).map(it => {
         const selisih = it.stok_fisik === null ? null : it.stok_fisik - it.stok_sistem;
         const selisihTxt = selisih === null ? "Belum dihitung" : (selisih > 0 ? `+${selisih}` : String(selisih));
         const selisihClass = selisih === null || selisih === 0 ? "" : (selisih > 0 ? "so-selisih-lebih" : "so-selisih-kurang");
+        const tdSistem = tampilkanStokSistem ? `<td class="num">${it.stok_sistem}</td>` : "";
         return `
 <tr>
     <td style="white-space:normal;">${it.nama}</td>
     <td>${it.kategori || "-"}</td>
     <td>${it.satuan || "-"}</td>
-    <td class="num">${it.stok_sistem}</td>
+    ${tdSistem}
     <td class="num">${it.stok_fisik === null ? "-" : it.stok_fisik}</td>
     <td class="num ${selisihClass}">${selisihTxt}</td>
 </tr>`;

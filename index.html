@@ -2527,7 +2527,7 @@ tr.audit-nilai-bkb-subtotal td{
 
                     <div class="form-group" style="max-width:360px;">
                         <label>Cari Barang</label>
-                        <input type="text" id="ic-search" placeholder="Ketik nama barang..." oninput="renderInventoryControl()">
+                        <input type="text" id="ic-search" placeholder="Ketik nama barang..." oninput="window.renderInventoryControlDebounced()">
                     </div>
 
                     <div class="mb-counter" style="display:flex; justify-content:space-between; align-items:center; gap:8px; flex-wrap:wrap;">
@@ -3762,7 +3762,7 @@ tr.audit-nilai-bkb-subtotal td{
 
                 <div class="form-group" style="max-width:320px; margin-bottom:12px;">
                     <label>Cari Barang</label>
-                    <input type="text" id="audit-master-barang-cari" placeholder="Ketik nama barang..." oninput="renderAuditMasterBarang()">
+                    <input type="text" id="audit-master-barang-cari" placeholder="Ketik nama barang..." oninput="window.renderAuditMasterBarangDebounced()">
                 </div>
 
                 <div class="panel">
@@ -5610,6 +5610,22 @@ window.cetakKartuStock = function(){
     }, 500);
 }
 
+// ---------------------------------------------------------
+// debounce -- tunda eksekusi fungsi sampai ada jeda X ms tanpa pemanggilan
+// baru. Dipakai di kotak cari tabel besar (Inventory Control, Audit Master
+// Barang) supaya render ulang SELURUH tabel tidak terjadi di SETIAP ketukan
+// huruf -- kalau Master Barang sudah ribuan baris, render ulang per huruf
+// bisa numpuk dan bikin tab browser "Not Responding". Cukup render sekali,
+// sesaat setelah user berhenti mengetik.
+// ---------------------------------------------------------
+function debounce(fn, delayMs){
+    let timer = null;
+    return function(...args){
+        clearTimeout(timer);
+        timer = setTimeout(() => fn.apply(this, args), delayMs);
+    };
+}
+
 // -------- Inventory Control (lihat & koreksi Stok per barang) --------
 let unsubInventoryControl = null;
 let inventoryControlData = [];
@@ -5617,9 +5633,24 @@ let inventoryControlData = [];
 function pantauInventoryControl(){
     if(unsubInventoryControl) unsubInventoryControl();
     const q = query(collection(db, "master_barang"), orderBy("nama"));
-    unsubInventoryControl = onSnapshot(q, (snap) => {
+
+    // PENTING: master_barang adalah tabel yang PALING SERING berubah di
+    // seluruh aplikasi -- hampir setiap Penerimaan/BKB/PO/BMB/Koreksi
+    // menyentuh stok barang. onSnapshot() (lihat definisinya) langsung
+    // menarik ULANG SELURUH tabel setiap kali ADA SAJA satu baris yang
+    // berubah di mana pun, buat SEMUA klien yang sedang membuka halaman
+    // ini. Kalau gudang sedang ramai transaksi, itu bisa jadi "badai"
+    // tarik-ulang + render-ulang tabel besar berkali-kali per menit --
+    // itulah yang bikin tab browser ngelag/"Not Responding" begitu masuk
+    // ke menu Inventory Control. Di-debounce supaya beberapa perubahan
+    // yang datang beruntun digabung jadi SATU render saja.
+    const renderDebounced = debounce((snap) => {
         inventoryControlData = snap.docs.map(d => ({ id: d.id, ...d.data() }));
         renderInventoryControl();
+    }, 600);
+
+    unsubInventoryControl = onSnapshot(q, (snap) => {
+        renderDebounced(snap);
     }, (err) => console.error("Gagal memuat Inventory Control:", err));
 }
 
@@ -5796,6 +5827,11 @@ window.renderInventoryControl = function(){
     }));
     window.tblTerapkanFilter("ic");
 }
+
+// Versi "tertunda" buat dipasang di kotak cari (lihat debounce di atas) --
+// render lengkap (rebuild tbody + hitung ulang filter) cuma jalan sekali
+// sesaat setelah user berhenti mengetik, bukan di setiap huruf.
+window.renderInventoryControlDebounced = debounce(() => window.renderInventoryControl(), 300);
 
 // Daftar barang berstatus SEGERA ORDER -- yang benar-benar perlu ditindaklanjuti
 // dibeli ulang, dipisahkan dari FOLLOWUP/REVIEW ULANG yang sifatnya cuma perlu dicek data.
@@ -11954,6 +11990,12 @@ window.renderAuditMasterBarang = function(){
     <td><button class="btn-ic-edit" type="button" onclick="simpanMasterBarangKoreksi('${it.id}', this)">💾 Simpan</button></td>
 </tr>`).join("");
 }
+
+// Versi "tertunda" buat kotak cari (lihat debounce di dekat Inventory
+// Control) -- halaman ini me-render <input> per baris (lebih berat dari
+// tabel biasa), jadi debounce di sini juga penting kalau Master Barang
+// sudah banyak.
+window.renderAuditMasterBarangDebounced = debounce(() => window.renderAuditMasterBarang(), 300);
 
 window.simpanMasterBarangKoreksi = async function(docId, btnEl){
     const row = btnEl.closest("tr");

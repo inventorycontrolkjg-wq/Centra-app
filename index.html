@@ -3456,13 +3456,14 @@ tr.audit-nilai-bkb-subtotal td{
                                 <th>Jml Diterima</th>
                                 <th>Satuan</th>
                                 <th>Harga Satuan</th>
-                                <th>Total Harga</th>
+                                <th>Subtotal</th>
                                 <th>Diskon</th>
                                 <th>Pph Pasal 23</th>
                                 <th>PPN</th>
-                                <th>Keterangan <span class="tbl-filter-icon" data-table="bmb" data-col="13" onclick="window.tblBukaFilter('bmb', 13, event)">▾</span></th>
-                                <th>Pembeli <span class="tbl-filter-icon" data-table="bmb" data-col="14" onclick="window.tblBukaFilter('bmb', 14, event)">▾</span></th>
-                                <th>Kategori 2 <span class="tbl-filter-icon" data-table="bmb" data-col="15" onclick="window.tblBukaFilter('bmb', 15, event)">▾</span></th>
+                                <th>Total Harga</th>
+                                <th>Keterangan <span class="tbl-filter-icon" data-table="bmb" data-col="14" onclick="window.tblBukaFilter('bmb', 14, event)">▾</span></th>
+                                <th>Pembeli <span class="tbl-filter-icon" data-table="bmb" data-col="15" onclick="window.tblBukaFilter('bmb', 15, event)">▾</span></th>
+                                <th>Kategori 2 <span class="tbl-filter-icon" data-table="bmb" data-col="16" onclick="window.tblBukaFilter('bmb', 16, event)">▾</span></th>
                                 <th>Aksi</th>
                             </tr>
                         </thead>
@@ -10946,7 +10947,7 @@ function pantauPurchasingListBMB(){
 
     if(unsubListBMB) unsubListBMB();
 
-    tblDaftarkanTabel("bmb", "#page-purchasing-list-bmb table", [0,1,2,3,4,13,14,15], "bmb-list-empty");
+    tblDaftarkanTabel("bmb", "#page-purchasing-list-bmb table", [0,1,2,3,4,14,15,16], "bmb-list-empty");
 
     const BATAS_AMAN_BMB = 300;
     const constraints = [collection(db, "bmb_faktur")];
@@ -11001,6 +11002,7 @@ function pantauPurchasingListBMB(){
     <td class="num" rowspan="${items.length}">${rpAtauKosong(d.diskon)}</td>
     <td class="num" rowspan="${items.length}">${rpAtauKosong(d.pph23)}</td>
     <td class="num" rowspan="${items.length}">${rpAtauKosong(d.ppn)}</td>
+    <td class="num" rowspan="${items.length}">${rpAtauKosong(d.grand_total)}</td>
     <td rowspan="${items.length}">${teksAtauKosong(d.keterangan)}</td>
     <td rowspan="${items.length}">${teksAtauKosong(d.pembeli)}</td>
     <td rowspan="${items.length}">${teksAtauKosong(d.kategori2)}</td>
@@ -11026,9 +11028,9 @@ function pantauPurchasingListBMB(){
             2: d.no_po || "-",
             3: d.tanggal_display || d.tanggal || "-",
             4: d.supplier || "-",
-            13: d.keterangan || "-",
-            14: d.pembeli || "-",
-            15: d.kategori2 || "-"
+            14: d.keterangan || "-",
+            15: d.pembeli || "-",
+            16: d.kategori2 || "-"
         })));
         window.tblTerapkanFilter("bmb");
 

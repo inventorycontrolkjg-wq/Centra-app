@@ -3057,6 +3057,7 @@ tr.audit-nilai-bkb-subtotal td{
                                 <th>Qty</th>
                                 <th style="width:60px;">PO</th>
                                 <th style="width:60px;">BMB</th>
+                                <th>Total Harga</th>
                                 <th style="width:60px;">SJ</th>
                                 <th>No. SJ</th>
                             </tr>
@@ -3584,6 +3585,7 @@ tr.audit-nilai-bkb-subtotal td{
                                 <th>No PR</th>
                                 <th>Detail Barang</th>
                                 <th>Penawaran</th>
+                                <th>Total Harga</th>
                                 <th>Catatan Pimpinan</th>
                                 <th>Diputuskan Oleh</th>
                                 <th>Tanggal Keputusan</th>
@@ -3609,6 +3611,7 @@ tr.audit-nilai-bkb-subtotal td{
                                 <th>No PR</th>
                                 <th>Detail Barang</th>
                                 <th>Penawaran</th>
+                                <th>Total Harga</th>
                                 <th>Catatan</th>
                                 <th>Diputuskan Oleh</th>
                                 <th>Tanggal Keputusan</th>
@@ -8638,6 +8641,46 @@ function renderStatusBMBHtml(d){
     return `<div class="detail-barang-list detail-barang-list-kode">${baris}</div>`;
 }
 
+// -------- Peta ringkas Total Harga per No. BMB --------
+// Dipakai di "List Permintaan Approve" (Purchasing) & "List Sudah Approve"
+// (Pimpinan) supaya kedua halaman itu bisa menampilkan kolom "Total Harga"
+// tanpa harus buka halaman List BMB / Faktur dulu. Diambil ULANG (bukan
+// realtime tersendiri) tiap kali data PR yang dipantau berubah -- cukup
+// ringan karena tabel bmb_faktur juga dibatasi jumlahnya seperti halaman lain.
+let bmbGrandTotalByNoBMB = {};
+async function muatPetaTotalHargaBMB(){
+    try{
+        const snap = await getDocs(query(collection(db, "bmb_faktur"), orderBy("created_at", "desc"), limit(1000)));
+        bmbGrandTotalByNoBMB = {};
+        snap.docs.forEach(docSnap => {
+            const d = docSnap.data();
+            if(d.no_bmb) bmbGrandTotalByNoBMB[d.no_bmb] = d.grand_total || 0;
+        });
+    } catch(e){
+        console.error("Gagal memuat peta Total Harga BMB:", e);
+    }
+}
+
+// Total Harga gabungan (jumlah dari semua No. BMB unik yang terkait) untuk SATU
+// dokumen PR -- ditelusuri lewat item_progress.<no_pr_urut>.bmb.no_bmb tiap item
+// di PR tsb, lalu dicocokkan ke peta bmbGrandTotalByNoBMB. null kalau belum ada
+// satupun item di PR ini yang sudah masuk BMB.
+function hitungTotalHargaBMBUntukPR(d){
+    const items = d.items || [];
+    const noPR = d.no_pr || "-";
+    const progress = d.item_progress || {};
+    const daftarNoBMB = new Set();
+    items.forEach((it, i) => {
+        const noUrut = noUrutItem(noPR, i);
+        const bmbInfo = progress[noUrut] && progress[noUrut].bmb;
+        if(bmbInfo && bmbInfo.no_bmb) daftarNoBMB.add(bmbInfo.no_bmb);
+    });
+    if(daftarNoBMB.size === 0) return null;
+    let total = 0;
+    daftarNoBMB.forEach(noBMB => { total += bmbGrandTotalByNoBMB[noBMB] || 0; });
+    return total;
+}
+
 // Status SJ per item -- ✔ kalau item ini sudah pernah masuk Surat Jalan manapun.
 function renderStatusSJHtml(d){
     const detail = hitungStatusKirimPerItem(d);
@@ -8827,7 +8870,7 @@ function pantauPurchasingListApprove(){
     const BATAS_AMAN_APPROVE = 500;
     const q = query(collection(db, "permintaan_barang"), where("status", "==", "approve"), orderBy("created_at", "desc"), limit(BATAS_AMAN_APPROVE));
 
-    unsubPurApprove = onSnapshot(q, (snapshot) => {
+    unsubPurApprove = onSnapshot(q, async (snapshot) => {
 
         const tbody = document.getElementById("pur-approve-body");
         const emptyEl = document.getElementById("pur-approve-empty");
@@ -8839,6 +8882,8 @@ function pantauPurchasingListApprove(){
             return;
         }
         emptyEl.style.display = "none";
+
+        await muatPetaTotalHargaBMB();
 
         let html = "";
         let grp = 0;
@@ -8862,6 +8907,7 @@ function pantauPurchasingListApprove(){
     <td>${renderQtyHtml(d)}</td>
     <td>${renderStatusPOHtml(d)}</td>
     <td>${renderStatusBMBHtml(d)}</td>
+    <td class="num">${rpAtauKosong(hitungTotalHargaBMBUntukPR(d))}</td>
     <td>${renderStatusSJHtml(d)}</td>
     <td>${renderSuratJalanItemHtml(d, docSnap.id)}</td>
 </tr>`;
@@ -11301,7 +11347,7 @@ function pantauPimpinanApproved(jenis){
     const BATAS_AMAN_APPROVED = 500;
     const q = query(collection(db, "permintaan_barang"), orderBy("created_at", "desc"), limit(BATAS_AMAN_APPROVED));
 
-    unsubPimApproved = onSnapshot(q, (snapshot) => {
+    unsubPimApproved = onSnapshot(q, async (snapshot) => {
 
         const tbody = document.getElementById(idBody);
         const emptyEl = document.getElementById(idEmpty);
@@ -11323,6 +11369,8 @@ function pantauPimpinanApproved(jenis){
         }
         emptyEl.style.display = "none";
 
+        await muatPetaTotalHargaBMB();
+
         tbody.innerHTML = rows.map(({ id, d }, i) => {
             const grpClass = i % 2 === 0 ? "tbl-grp-a" : "tbl-grp-b";
             const tgl = d.created_at ? d.created_at.toDate().toLocaleDateString("id-ID", { day:"numeric", month:"short", year:"numeric" }) : "-";
@@ -11338,12 +11386,15 @@ function pantauPimpinanApproved(jenis){
 
             const diputuskanPada = d.diputuskan_pada ? d.diputuskan_pada.toDate().toLocaleString("id-ID", { day:"numeric", month:"short", year:"numeric", hour:"2-digit", minute:"2-digit" }) : "-";
 
+            const totalHargaBMB = hitungTotalHargaBMBUntukPR(d);
+
             return `
 <tr class="${grpClass}">
     <td>${tgl}</td>
     <td>${d.no_pr || "-"}</td>
     <td>${renderDetailBarangHtml(d)}</td>
     <td>${penawaranHtml || "-"}</td>
+    <td class="num">${rpAtauKosong(totalHargaBMB)}</td>
     <td>${d.catatan_pimpinan || "-"}</td>
     <td>${d.diputuskan_oleh || "-"}</td>
     <td>${diputuskanPada}</td>

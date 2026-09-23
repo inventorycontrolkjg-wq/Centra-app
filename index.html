@@ -945,6 +945,16 @@ table.po-cetak-ttd .po-ttd-space td{ height:100px; border-top:none; }
 .popb-summary-row .value{ font-weight:600; }
 .popb-summary-row.total{ border-top:1px solid #ddd; margin-top:6px; padding-top:9px; font-size:14px; font-weight:800; }
 
+/* Khusus PO: sejajarkan catatan "Perhatian" (kiri) dengan ringkasan
+   Diskon/Pph23/PPN/Total (kanan) dalam satu baris, supaya kolom tanda
+   tangan sesudahnya bisa naik tepat di bawah Total -- tidak lagi kepisah
+   jauh gara-gara catatan Perhatian yang lebar penuh. Pakai class turunan
+   (bukan ubah .popb-note/.popb-summary langsung) biar dokumen cetak lain
+   (BMB/KBB/dst) yang masih pakai susunan lama tidak ikut berubah. */
+.popb-bottom-row{ display:flex; align-items:flex-start; gap:24px; margin-bottom:22px; }
+.popb-bottom-row .popb-note{ flex:1; margin:2px 0 0; }
+.popb-bottom-row .popb-summary{ flex-shrink:0; margin-left:0; margin-bottom:0; }
+
 .popb-gallery-wrap{ border:1px solid #e2e2e2; background:#fafafa; border-radius:10px; padding:12px 14px; margin:16px 0 6px; }
 .popb-gallery-title{ font-size:9.5px; font-weight:700; text-transform:uppercase; letter-spacing:.4px; color:#888; margin-bottom:10px; }
 
@@ -10367,21 +10377,23 @@ window.cetakPO = function(id){
         <tbody>${baris}</tbody>
     </table>
 
-    <div class="popb-summary">
-        <div class="popb-summary-row"><span class="label">Diskon</span><span class="value">${rp(totalDiskon)}</span></div>
-        <div class="popb-summary-row"><span class="label">Pph pasal 23</span><span class="value">${rp(totalPPh23)}</span></div>
-        <div class="popb-summary-row"><span class="label">PPN</span><span class="value">${rp(totalPPN)}</span></div>
-        <div class="popb-summary-row total"><span class="label">TOTAL</span><span class="value">${rp(d.grand_total)}</span></div>
-    </div>
+    <div class="popb-bottom-row">
+        <p class="popb-note">
+            <b>Perhatian:</b><br>
+            - Order pembelian harus dilampirkan pada saat penagihan<br>
+            - No order pembelian harus dicantumkan pada nota<br>
+            - Syarat-syarat pembayaran : ${syaratPembayaran}<br>
+            - Tanggal kirim : SEGERA
+            ${ketSupplierPertama ? `<br>- Keterangan : ${ketSupplierPertama}` : ""}
+        </p>
 
-    <p class="popb-note">
-        <b>Perhatian:</b><br>
-        - Order pembelian harus dilampirkan pada saat penagihan<br>
-        - No order pembelian harus dicantumkan pada nota<br>
-        - Syarat-syarat pembayaran : ${syaratPembayaran}<br>
-        - Tanggal kirim : SEGERA
-        ${ketSupplierPertama ? `<br>- Keterangan : ${ketSupplierPertama}` : ""}
-    </p>
+        <div class="popb-summary">
+            <div class="popb-summary-row"><span class="label">Diskon</span><span class="value">${rp(totalDiskon)}</span></div>
+            <div class="popb-summary-row"><span class="label">Pph pasal 23</span><span class="value">${rp(totalPPh23)}</span></div>
+            <div class="popb-summary-row"><span class="label">PPN</span><span class="value">${rp(totalPPN)}</span></div>
+            <div class="popb-summary-row total"><span class="label">TOTAL</span><span class="value">${rp(d.grand_total)}</span></div>
+        </div>
+    </div>
 
     <div class="popb-sign-grid">
         <div class="popb-sign-cell">

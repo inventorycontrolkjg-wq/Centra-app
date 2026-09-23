@@ -3457,9 +3457,12 @@ tr.audit-nilai-bkb-subtotal td{
                                 <th>Satuan</th>
                                 <th>Harga Satuan</th>
                                 <th>Total Harga</th>
-                                <th>Keterangan <span class="tbl-filter-icon" data-table="bmb" data-col="10" onclick="window.tblBukaFilter('bmb', 10, event)">▾</span></th>
-                                <th>Pembeli <span class="tbl-filter-icon" data-table="bmb" data-col="11" onclick="window.tblBukaFilter('bmb', 11, event)">▾</span></th>
-                                <th>Kategori 2 <span class="tbl-filter-icon" data-table="bmb" data-col="12" onclick="window.tblBukaFilter('bmb', 12, event)">▾</span></th>
+                                <th>Diskon</th>
+                                <th>Pph Pasal 23</th>
+                                <th>PPN</th>
+                                <th>Keterangan <span class="tbl-filter-icon" data-table="bmb" data-col="13" onclick="window.tblBukaFilter('bmb', 13, event)">▾</span></th>
+                                <th>Pembeli <span class="tbl-filter-icon" data-table="bmb" data-col="14" onclick="window.tblBukaFilter('bmb', 14, event)">▾</span></th>
+                                <th>Kategori 2 <span class="tbl-filter-icon" data-table="bmb" data-col="15" onclick="window.tblBukaFilter('bmb', 15, event)">▾</span></th>
                                 <th>Aksi</th>
                             </tr>
                         </thead>
@@ -10943,7 +10946,7 @@ function pantauPurchasingListBMB(){
 
     if(unsubListBMB) unsubListBMB();
 
-    tblDaftarkanTabel("bmb", "#page-purchasing-list-bmb table", [0,1,2,3,4,10,11,12], "bmb-list-empty");
+    tblDaftarkanTabel("bmb", "#page-purchasing-list-bmb table", [0,1,2,3,4,13,14,15], "bmb-list-empty");
 
     const BATAS_AMAN_BMB = 300;
     const constraints = [collection(db, "bmb_faktur")];
@@ -10995,6 +10998,9 @@ function pantauPurchasingListBMB(){
     <td>${teksAtauKosong(it.satuan)}</td>
     <td class="num">${rpAtauKosong(it.harga_satuan)}</td>
     <td class="num">${rpAtauKosong(it.total_harga)}</td>
+    <td class="num" rowspan="${items.length}">${rpAtauKosong(d.diskon)}</td>
+    <td class="num" rowspan="${items.length}">${rpAtauKosong(d.pph23)}</td>
+    <td class="num" rowspan="${items.length}">${rpAtauKosong(d.ppn)}</td>
     <td rowspan="${items.length}">${teksAtauKosong(d.keterangan)}</td>
     <td rowspan="${items.length}">${teksAtauKosong(d.pembeli)}</td>
     <td rowspan="${items.length}">${teksAtauKosong(d.kategori2)}</td>
@@ -11020,9 +11026,9 @@ function pantauPurchasingListBMB(){
             2: d.no_po || "-",
             3: d.tanggal_display || d.tanggal || "-",
             4: d.supplier || "-",
-            10: d.keterangan || "-",
-            11: d.pembeli || "-",
-            12: d.kategori2 || "-"
+            13: d.keterangan || "-",
+            14: d.pembeli || "-",
+            15: d.kategori2 || "-"
         })));
         window.tblTerapkanFilter("bmb");
 

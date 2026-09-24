@@ -11266,6 +11266,7 @@ function pantauPimpinanReview(){
             const daftar = d.penawaran_list || [];
             if(daftar.length === 0) return; // belum ada penawaran dari Purchasing, belum siap direview
             if((d.approvement_oleh || "") !== "pimpinan") return; // Purchasing yang pilih dirinya sendiri jadi approver
+            if((d.status || "menunggu") === "approve") return; // sudah diputuskan approve -- pindah ke List Sudah Approve, jangan nyangkut di sini lagi (Hold tetap tampil supaya masih bisa diputuskan ulang)
             pimListMap[docSnap.id] = d;
             rows.push({ id: docSnap.id, d });
         });

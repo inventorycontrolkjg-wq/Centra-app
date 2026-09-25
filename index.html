@@ -10970,6 +10970,33 @@ window.submitBMB = async function(){
             });
         });
 
+        // Segarkan "Harga Terakhir" di Master Barang dengan harga BERSIH (setelah
+        // Diskon/PPh23/PPN) -- dipakai laporan "Nilai Barang Terpakai" di akun
+        // audit. Sebelumnya harga_terakhir cuma diperbarui saat PO TERBIT (harga
+        // kotor dari PO, sebelum diskon/pajak faktur diketahui) dan tidak pernah
+        // disegarkan lagi saat BMB difinalisasi -- padahal diskon/PPh23/PPN baru
+        // pasti diketahui di tahap BMB ini. Diskon/PPh23/PPN BMB dicatat di LEVEL
+        // DOKUMEN (satu angka untuk seluruh BMB, bukan per baris barang), jadi
+        // untuk BMB yang isinya lebih dari 1 barang, ketiganya dibagi PROPORSIONAL
+        // dulu ke tiap item berdasarkan porsi subtotal-nya (item.total_harga /
+        // subtotal seluruh BMB) sebelum dihitung harga bersih per unit -- supaya
+        // item dengan porsi nilai lebih besar ikut menanggung penyesuaian yang
+        // lebih besar juga, bukan dibagi rata atau ditumpuk ke satu item saja.
+        const hargaBersihPerBarang = {}; // idBarang -> harga bersih per unit
+        items.forEach(it => {
+            const idBarang = slugBarang(it.nama_barang || "");
+            if(!idBarang || !it.jumlah_diterima) return;
+            const porsi = subtotal > 0 ? (it.total_harga / subtotal) : 0;
+            const totalBersihItem = it.total_harga - (diskon * porsi) - (pph23 * porsi) + (ppn * porsi);
+            hargaBersihPerBarang[idBarang] = totalBersihItem / it.jumlah_diterima;
+        });
+        Object.keys(hargaBersihPerBarang).forEach(idBarang => {
+            batch.set(doc(db, "master_barang", idBarang), {
+                harga_terakhir: hargaBersihPerBarang[idBarang],
+                harga_terakhir_diperbarui: serverTimestamp()
+            }, { merge: true });
+        });
+
         await batch.commit();
 
         msgEl.textContent = `BMB ${noBMB} berhasil disimpan.`;
@@ -11984,7 +12011,9 @@ window.koreksiQtyBMB = async function(docId, itemIdx, qtyLama){
 
 // ---- Laporan Nilai Barang Terpakai (BKB): kalkulasi rupiah barang yang keluar
 // dari gudang. Harga & Kategori diambil dari Master Barang (harga_terakhir
-// otomatis diperbarui tiap PO terbit) -- master_barang cukup diambil SEKALI
+// otomatis diperbarui tiap PO terbit, lalu disegarkan lagi dengan harga bersih
+// setelah Diskon/PPh23/PPN begitu BMB/Faktur-nya difinalisasi) -- master_barang
+// cukup diambil SEKALI
 // (bukan per-item query) supaya tetap ringan meski datanya banyak. Harga bisa
 // dikoreksi manual per baris kalau memang tidak ada di Master Barang / salah. ----
 
